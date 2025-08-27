@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>AI Retail Assistant — Followups + Voice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+    :root{--bg:#0c0f14;--panel:#111623;--text:#e7eefc;--muted:#a0a8bb;--border:#1f2740;--accent:#7aa2ff;--err:#ff6b6b}
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0c0f14,#0a0f1b);color:var(--text);font:14px/1.5 Inter,system-ui,Segoe UI,Arial}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:#0e1320}
+    .brand{font-weight:700}
+    .container{max-width:950px;margin:18px auto;padding:0 14px}
+    .chat{background:var(--panel);border:1px solid var(--border);border-radius:16px;min-height:70vh;display:flex;flex-direction:column;overflow:hidden}
+    .msgs{padding:16px;overflow:auto;flex:1}
+    .msg{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+    .bubble{border:1px solid var(--border);border-radius:14px;padding:10px 12px;max-width:80%;white-space:pre-wrap;word-break:break-word}
+    .user .bubble{background:#1b2336}
+    .bot  .bubble{background:#121a2b}
+    .meta{font-size:12px;color:var(--muted);display:flex;gap:10px;align-items:center}
+    .composer{display:flex;gap:8px;flex-wrap:wrap;padding:12px;border-top:1px solid var(--border);background:#0f1525}
+    .composer input[type="text"]{flex:1 1 400px;background:#0b1222;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px}
+    button{background:var(--accent);border:none;color:#fff;border-radius:10px;padding:8px 12px;font-weight:600;cursor:pointer;font-size:13px}
+    button.secondary{background:#151d31;color:#d7e2ff;border:1px solid var(--border)}
+    .spinner{width:18px;height:18px;border:3px solid #334;border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;display:none}
+    .spinner.on{display:inline-block} @keyframes spin{to{transform:rotate(360deg)}}
+    /* followups */
+    .followups{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+    .chip{background:#17213a;border:1px solid var(--border);color:#d7e2ff;border-radius:999px;padding:6px 10px;cursor:pointer}
+    .chip:hover{border-color:#2a3553}
+    /* mic */
+    .mic{display:flex;align-items:center;gap:8px}
+    .mic button{border-radius:999px}
+    .mic .hint{color:var(--muted);font-size:12px}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">AI Retail Assistant — Chat</div>
+    <div class="mic">
+      <button id="micBtn" title="Hold to speak">🎙️ Hold to Speak</button>
+      <span id="micHint" class="hint">press & hold (desktop) • long press (mobile)</span>
+      <div id="busy" class="spinner"></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="chat">
+      <div id="msgs" class="msgs"></div>
+      <div class="composer">
+        <input id="input" type="text" placeholder="Ask about products, returns, SKU-302, inventory…"/>
+        <button id="send">Send</button>
+        <button id="clear" class="secondary">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Config ----
+    const API_URL = "/api/chat/ask2";   // expects {answer, reply, (optional) followups[]}
+    const DEFAULT_FOLLOWUPS = [
+      "Show related products",
+      "Any current offers?",
+      "What’s the return policy?",
+      "Do we have stock by size/color?",
+      "Upsell/cross-sell ideas?"
+    ];
+
+    // ---- Elements ----
+    const elMsgs = document.getElementById("msgs");
+    const elInput = document.getElementById("input");
+    const elSend = document.getElementById("send");
+    const elClear = document.getElementById("clear");
+    const elBusy = document.getElementById("busy");
+    const elMic  = document.getElementById("micBtn");
+    const elMicHint = document.getElementById("micHint");
+
+    // ---- Chat helpers ----
+    function addMsg(role, nodeOrText){
+      const wrap = document.createElement("div");
+      wrap.className = `msg ${role}`;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      if (typeof nodeOrText === "string") bubble.textContent = nodeOrText;
+      else bubble.appendChild(nodeOrText);
+      wrap.appendChild(bubble);
+      const meta = document.createElement("div");
+      meta.className = "meta"; meta.textContent = role === "user" ? "You" : "Assistant";
+      wrap.appendChild(meta);
+      elMsgs.appendChild(wrap);
+      elMsgs.scrollTop = elMsgs.scrollHeight;
+      return wrap; // so we can append followups under this message
+    }
+
+    function normalizeText(s=""){
+      s = s.replace(/\u00A0|\u2007|\u202F/g, " ").replace(/\r\n/g,"\n");
+      if (!/\s/.test(s)) { // no spaces at all → do minimal repair
+        s = s
+          .replace(/([.,;:!?])(?!\s)/g,"$1 ")
+          .replace(/(?<=[a-z])(?=[A-Z])/g," ")
+          .replace(/(?<=[A-Za-z])(?=\d)/g," ")
+          .replace(/(?<=\d)(?=[A-Za-z])/g," ")
+          .replace(/([*-])(?!\s)/g,"$1 ")
+          .replace(/(?<=[A-Za-z]['’])(?=[A-Za-z])/g," ");
+      }
+      return s.replace(/[ \t]{2,}/g," ").replace(/\n{3,}/g,"\n\n").trim();
+    }
+
+    function showBusy(on){ elBusy.classList.toggle("on", !!on); elSend.disabled = !!on; elMic.disabled = !!on; }
+
+    // Render only followup chips (NO sources/details now)
+    function renderFollowups(list){
+      const box = document.createElement("div");
+      box.className = "followups";
+      list.slice(0,6).forEach(q=>{
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.textContent = q;
+        chip.onclick = ()=> send(q);
+        box.appendChild(chip);
+      });
+      return box;
+    }
+
+    // ---- Networking ----
+    async function ask(message){
+      const controller = new AbortController();
+      const timeout = setTimeout(()=>controller.abort(new DOMException("Timeout","AbortError")), 20000);
+      try{
+        const res = await fetch(API_URL, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ message }),
+          signal: controller.signal,
+          cache: "no-store"
+        });
+        clearTimeout(timeout);
+        if(!res.ok){ throw new Error(`HTTP ${res.status}`); }
+        const data = await res.json();
+
+        const answer = normalizeText(data.answer || data.reply || "");
+        // we expect `followups` as array of strings; if missing, derive a few generic ones
+        let followups = Array.isArray(data.followups) ? data.followups.filter(Boolean) : [];
+        if (!followups.length) followups = deriveFollowups(answer);
+
+        return { answer, followups };
+      }catch(e){
+        clearTimeout(timeout);
+        return { answer: "Chat failed. Please try again.", followups: DEFAULT_FOLLOWUPS };
+      }
+    }
+
+    // Basic client-side followup generator if backend doesn't send any
+    function deriveFollowups(answer){
+      const a = answer.toLowerCase();
+      if (a.includes("return")) {
+        return ["Start a return", "Return window for electronics?", "Exceptions to policy?"];
+      }
+      if (a.includes("stock") || a.includes("inventory")) {
+        return ["Show current stock", "When to reorder?", "Low-stock alerts for this SKU?"];
+      }
+      if (a.includes("price") || a.includes("discount") || a.includes("offer")) {
+        return ["Apply a discount", "Any bundle offers?", "Competitor price check"];
+      }
+      return DEFAULT_FOLLOWUPS;
+    }
+
+    // ---- Flow ----
+    async function send(text){
+      const message = (text ?? elInput.value).trim();
+      if (!message) return;
+      addMsg("user", message);
+      elInput.value = "";
+      showBusy(true);
+      const { answer, followups } = await ask(message);
+      showBusy(false);
+
+      const botWrap = addMsg("bot", answer);
+      // append followup chips to this bot message
+      if (followups && followups.length){
+        const chips = renderFollowups(followups);
+        botWrap.appendChild(chips);
+      }
+    }
+
+    elSend.onclick = ()=> send();
+    elInput.onkeydown = e=>{ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); send(); } };
+    elClear.onclick = ()=> elMsgs.innerHTML="";
+
+    // ---- Voice (press & hold) ----
+    let recognition, recognizing = false, holdActive = false;
+    function initRecognition(){
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) { elMicHint.textContent = "speech not supported in this browser"; return null; }
+      const rec = new SR();
+      rec.lang = "en-IN";     // change if needed
+      rec.interimResults = true;
+      rec.continuous = true;
+      rec.maxAlternatives = 1;
+
+      let interim = "";
+      rec.onstart = ()=>{ recognizing = true; elMic.textContent = "🎙️ Listening…"; };
+      rec.onerror = ()=>{};
+      rec.onend = ()=>{
+        recognizing = false; elMic.textContent = "🎙️ Hold to Speak";
+        if (interim && holdActive === false) { const final = interim; interim = ""; send(final); }
+        interim = "";
+      };
+      rec.onresult = (ev)=>{
+        let finalText = "";
+        for(let i=ev.resultIndex;i<ev.results.length;i++){
+          const r = ev.results[i];
+          if (r.isFinal) finalText += r[0].transcript;
+          else interim = r[0].transcript;
+        }
+        if (finalText) { send(finalText); interim=""; if (!holdActive) rec.stop(); }
+      };
+      return rec;
+    }
+
+    function startVoice(){
+      recognition = recognition || initRecognition();
+      if (!recognition) return;
+      if (!recognizing) { recognition.start(); }
+    }
+    function stopVoice(){
+      holdActive = false;
+      if (recognition && recognizing) { recognition.stop(); }
+    }
+
+    // Desktop: mouse hold
+    elMic.addEventListener("mousedown", ()=>{ holdActive = true; startVoice(); });
+    elMic.addEventListener("mouseup", stopVoice);
+    elMic.addEventListener("mouseleave", ()=>{ if (holdActive) stopVoice(); });
+    // Mobile: touch hold
+    elMic.addEventListener("touchstart", (e)=>{ e.preventDefault(); holdActive = true; startVoice(); }, {passive:false});
+    elMic.addEventListener("touchend", (e)=>{ e.preventDefault(); stopVoice(); }, {passive:false});
+
+    // Greeting
+    addMsg("bot","Hi! Ask anything about products, returns, invoices, or inventory. I’ll suggest follow-up questions you can tap.");
+  </script>
+</body>
+</html>

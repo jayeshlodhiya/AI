@@ -1,0 +1,18 @@
+# Large Model Ollama Configuration Profile
+# Use this for better quality responses with larger models
+
+app:
+  llm:
+    provider: ollama
+    model: llama3:13b-instruct   # Better quality, larger model
+    base-url: http://localhost:11434
+    api-key: ""
+    # Extended timeout settings for larger models
+    connect-timeout: 15000       # 15 seconds for connection
+    read-timeout: 120000         # 2 minutes for response
+
+# Enable debug logging for LLM operations
+logging:
+  level:
+    com.retailai.service.LlmClient: DEBUG
+    org.springframework.web.client: DEBUG

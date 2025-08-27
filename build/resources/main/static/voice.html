@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Retail Assistant — Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg:#0c0f14; --panel:#111623; --text:#e7eefc; --muted:#a0a8bb;
+      --border:#1f2740; --accent:#7aa2ff; --ok:#18c79c; --err:#ff6b6b;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:linear-gradient(180deg,#0c0f14,#0a0f1b);color:var(--text);font:14px/1.5 Inter,system-ui,Segoe UI,Arial}
+    a{color:var(--text);text-decoration:none;opacity:.9}
+    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:#0e1320}
+    .brand{font-weight:700}
+    .container{max-width:950px;margin:18px auto;padding:0 14px}
+    .chat{background:var(--panel);border:1px solid var(--border);border-radius:16px;min-height:70vh;display:flex;flex-direction:column;overflow:hidden}
+    .msgs{padding:16px;overflow:auto;flex:1}
+    .msg{display:flex;gap:10px;margin:10px 0}
+    .bubble{border:1px solid var(--border);border-radius:14px;padding:10px 12px;max-width:80%}
+    .bubble{white-space:pre-wrap;word-break:break-word} /* preserve spaces/newlines */
+    .user .bubble{background:#1b2336}
+    .bot  .bubble{background:#121a2b}
+    .meta{font-size:12px;color:var(--muted);margin-top:4px}
+    .composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border);background:#0f1525}
+    .composer input[type="text"]{flex:1;background:#0b1222;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:10px 12px}
+    button{background:var(--accent);border:none;color:#fff;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+    button.secondary{background:#151d31;color:#d7e2ff;border:1px solid var(--border)}
+    .row{display:flex;gap:10px;align-items:center}
+    .switch{display:flex;gap:8px;align-items:center;color:var(--muted)}
+    .spinner{width:18px;height:18px;border:3px solid #334; border-top-color: var(--accent); border-radius:50%; animation: spin 1s linear infinite; display:none}
+    .spinner.on{display:inline-block}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    /* RAG pills */
+    .rag{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px}
+    .pill{background:#171f35;border:1px solid var(--border);border-radius:10px;padding:8px 10px;max-width:100%}
+    .pill small{display:block;color:var(--muted)}
+    .error{color:var(--err)}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="brand">AI Retail Assistant — Chat</div>
+    <div class="row">
+      <label class="switch">
+        <input id="speak" type="checkbox" checked />
+        <span>Speak replies</span>
+      </label>
+      <div id="busy" class="spinner"></div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="chat">
+      <div id="msgs" class="msgs"></div>
+      <div class="composer">
+        <input id="input" type="text" placeholder="Ask about returns, inventory, SKU-302, forecasts…" autocomplete="off" />
+        <button id="send">Send</button>
+        <button id="clear" class="secondary">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ---- Config ----
+    const API_URL = "/api/chat/ask2"; // your new typed endpoint
+
+    // ---- Elements ----
+    const elMsgs = document.getElementById("msgs");
+    const elInput = document.getElementById("input");
+    const elSend = document.getElementById("send");
+    const elClear = document.getElementById("clear");
+    const elBusy = document.getElementById("busy");
+    const elSpeak = document.getElementById("speak");
+
+    // ---- Utilities ----
+    function addMsg(role, nodeOrText){
+      const wrap = document.createElement("div");
+      wrap.className = `msg ${role}`;
+      const bubble = document.createElement("div");
+      bubble.className = "bubble";
+      if (typeof nodeOrText === "string") bubble.textContent = nodeOrText;
+      else bubble.appendChild(nodeOrText);
+      wrap.appendChild(bubble);
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = role === "user" ? "You" : "Assistant";
+      wrap.appendChild(meta);
+      elMsgs.appendChild(wrap);
+      elMsgs.scrollTop = elMsgs.scrollHeight;
+    }
+
+    function normalizeText(s=""){
+      // convert exotic spaces to regular
+      s = s.replace(/\u00A0|\u2007|\u202F/g, " ").replace(/\r\n/g,"\n");
+      // if there are literally no spaces, try to re-insert after punctuation and word boundaries
+      if (!/\s/.test(s)) {
+        s = s
+          .replace(/([.,;:!?])(?!\s)/g, "$1 ")
+          .replace(/(?<=[a-z])(?=[A-Z])/g, " ")
+          .replace(/(?<=[A-Za-z])(?=\d)/g, " ")
+          .replace(/(?<=\d)(?=[A-Za-z])/g, " ")
+          .replace(/([*-])(?!\s)/g, "$1 ")
+          .replace(/(?<=[A-Za-z]['’])(?=[A-Za-z])/g, " ");
+      }
+      s = s.replace(/[ \t]{2,}/g, " ").replace(/\n{3,}/g, "\n\n").trim();
+      return s;
+    }
+
+    function speak(text){
+      if (!elSpeak.checked) return;
+      try{
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = "en-IN"; // adjust if you need
+        window.speechSynthesis.speak(u);
+      }catch(e){}
+    }
+
+    function showBusy(isOn){ elBusy.classList.toggle("on", !!isOn); elSend.disabled = !!isOn; }
+
+    // Build RAG UI nodes
+    function renderRag(answer, sources, suggestions){
+      const frag = document.createDocumentFragment();
+      const p = document.createElement("div");
+      p.textContent = normalizeText(answer || "");
+      frag.appendChild(p);
+
+      if (Array.isArray(sources) && sources.length){
+        const sbox = document.createElement("div");
+        sbox.className = "rag";
+        sources.forEach(s => {
+          const pill = document.createElement("div");
+          pill.className = "pill";
+          const title = (s.doc_id || s.doc_type || "source");
+          const text = normalizeText(s.text || "");
+          pill.innerHTML = `<b>${escapeHtml(title)}</b><small>${escapeHtml((s.doc_type||"").toUpperCase())}</small><div>${escapeHtml(text)}</div>`;
+          sbox.appendChild(pill);
+        });
+        frag.appendChild(sbox);
+      }
+      if (Array.isArray(suggestions) && suggestions.length){
+        const gbox = document.createElement("div");
+        gbox.className = "rag";
+        suggestions.forEach(t => {
+          const pill = document.createElement("div");
+          pill.className = "pill";
+          pill.innerHTML = `<b>${escapeHtml(t.title||"Suggestion")}</b><small>${escapeHtml(t.type||"")}</small><small>${escapeHtml(t.impact||"")}</small>`;
+          gbox.appendChild(pill);
+        });
+        frag.appendChild(gbox);
+      }
+      return frag;
+    }
+    function escapeHtml(str=""){
+      return String(str).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;");
+    }
+
+    // ---- Networking ----
+    async function ask(message){
+      const controller = new AbortController();
+      const timeout = setTimeout(()=>controller.abort(new DOMException("Timeout","AbortError")), 20000);
+      try{
+        const res = await fetch(API_URL, {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ message }),
+          signal: controller.signal,
+          cache: "no-store",
+          keepalive: false
+        });
+        clearTimeout(timeout);
+        if (!res.ok) {
+          const txt = await res.text().catch(()=> "");
+          throw new Error(`HTTP ${res.status}: ${txt || res.statusText}`);
+        }
+        const data = await res.json().catch(()=> { throw new Error("Invalid JSON"); });
+        // expected: { type, answer, reply, sources[], suggestions[] }
+        const answer = normalizeText(data.answer || data.reply || "");
+        return {
+          answer,
+          sources: Array.isArray(data.sources) ? data.sources : [],
+          suggestions: Array.isArray(data.suggestions) ? data.suggestions : []
+        };
+      } catch (e){
+        clearTimeout(timeout);
+        if (e?.name === "AbortError") return { answer: "Request timed out. Please try again." };
+        if (String(e).includes("Failed to fetch")) return { answer: "Network error. Is the server running? CORS okay?" };
+        return { answer: `Chat failed: ${e.message || e}` };
+      }
+    }
+
+    // ---- Events ----
+    async function send(){
+      const text = elInput.value.trim();
+      if (!text) return;
+      addMsg("user", text);
+      elInput.value = "";
+      showBusy(true);
+      const resp = await ask(text);
+      showBusy(false);
+      const block = renderRag(resp.answer, resp.sources, resp.suggestions);
+      addMsg("bot", block);
+      speak(resp.answer);
+    }
+
+    elSend.addEventListener("click", send);
+    elInput.addEventListener("keydown", (e)=>{ if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }});
+    elClear.addEventListener("click", ()=>{ elMsgs.innerHTML = ""; });
+
+    // Greeting
+    addMsg("bot", "Hi! Ask about products, returns, invoices, or forecasts. I’ll cite sources and suggest actions.");
+  </script>
+</body>
+</html>

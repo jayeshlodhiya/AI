@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Promotions Studio</title>
+    <style>
+        :root{
+            --bg:#f4f6f8; --panel:#fff; --border:#e5e7eb; --text:#0f172a; --muted:#64748b;
+            --primary:#2563eb; --radius:16px; --shadow:0 6px 18px rgba(2,6,23,.08);
+            --ok:#16a34a; --warn:#b45309; --bad:#b91c1c;
+        }
+        body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;}
+        .wrap{padding:16px;display:grid;gap:16px}
+        .grid{display:grid;grid-template-columns: 1.1fr 1.9fr; gap:16px}
+        .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+        .card .header{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:800;display:flex;align-items:center;gap:8px}
+        .card .body{padding:12px 14px}
+        .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .btn{border:0;border-radius:10px;padding:10px 12px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+        .btn.primary{background:var(--primary);color:#fff}
+        .btn.gray{background:#f1f5f9}
+        .btn.danger{background:#fee2e2;color:var(--bad)}
+        .field{display:grid;gap:6px}
+        input[type="text"], input[type="number"], textarea, select{
+            padding:10px;border:1px solid var(--border);border-radius:10px;outline:none;background:#fff
+        }
+        textarea{min-height:120px;resize:vertical}
+        .thumb{width:120px;height:120px;border:1px dashed var(--border);border-radius:10px;background:#fafafa;display:flex;align-items:center;justify-content:center;overflow:hidden}
+        .thumb img{width:100%;height:100%;object-fit:cover}
+        .status{font-size:12px;color:var(--muted)}
+        .progress{height:8px;background:#e5e7eb;border-radius:8px;overflow:hidden}
+        .progress > div{height:100%;width:0;background:var(--primary);transition:width .25s ease}
+        .pill{background:#eef2ff;color:#3730a3;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700}
+        .grid2{display:grid;grid-template-columns: 1fr 1fr; gap:10px}
+        .videoWrap{position:relative;background:#000;border-radius:12px;overflow:hidden}
+        video{display:block;width:100%;height:auto}
+        .err{color:var(--bad)}
+        @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <div class="grid">
+        <!-- Left: Form -->
+        <section class="card">
+            <div class="header">🎬 Create Promotion</div>
+            <div class="body">
+                <div class="field">
+                    <label><strong>Prompt</strong> <span class="status">Describe the brand/product, tone, offers, CTA</span></label>
+                    <textarea id="prompt" placeholder="e.g., Create a 15s promo for 'Skyline Vista' 3BHK launch—modern, upbeat, show amenities, CTA: Book a site visit this weekend."></textarea>
+                </div>
+
+                <div class="grid2" style="margin-top:10px">
+                    <div class="field">
+                        <label><strong>Brand / Product Name</strong></label>
+                        <input id="brand" type="text" placeholder="e.g., Skyline Vista"/>
+                    </div>
+                    <div class="field">
+                        <label><strong>Aspect Ratio</strong></label>
+                        <select id="ratio">
+                            <option value="16:9">16:9 (YouTube)</option>
+                            <option value="9:16">9:16 (Reels/Shorts)</option>
+                            <option value="1:1">1:1 (Square)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid2" style="margin-top:10px">
+                    <div class="field">
+                        <label><strong>Duration (seconds)</strong></label>
+                        <input id="duration" type="number" min="5" max="60" value="15"/>
+                    </div>
+                    <div class="field">
+                        <label><strong>Theme Color</strong> <span class="status">(hex)</span></label>
+                        <input id="color" type="text" placeholder="#2563eb" value="#2563eb"/>
+                    </div>
+                </div>
+
+                <div class="field" style="margin-top:10px">
+                    <label><strong>Primary Image (optional)</strong> <span class="status">Used as hero or overlay</span></label>
+                    <div class="row">
+                        <div class="thumb" id="thumb"><span class="status">No image</span></div>
+                        <input id="image" type="file" accept="image/*" />
+                        <button class="btn gray" onclick="clearImage()" type="button">Clear</button>
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top:14px">
+                    <button class="btn primary" onclick="submitJob()">🚀 Generate Video</button>
+                    <span class="pill">n8n API</span>
+                </div>
+
+                <div id="statusBox" class="status" style="margin-top:10px">Idle.</div>
+                <div class="progress" style="margin-top:8px"><div id="bar"></div></div>
+                <div id="errorBox" class="err" style="margin-top:8px;display:none"></div>
+            </div>
+        </section>
+
+        <!-- Right: Output -->
+        <section class="card">
+            <div class="header">📺 Preview & Results</div>
+            <div class="body">
+                <div id="result" class="videoWrap">
+                    <div style="padding:16px;color:#e5e7eb">No video yet. Submit a job.</div>
+                </div>
+                <div id="meta" style="margin-top:10px"></div>
+            </div>
+        </section>
+    </div>
+
+</div>
+
+<script>
+    /** ---------- Config ----------
+     * Set your n8n endpoint(s). You can:
+     *  1) Use a single webhook that returns a direct video URL
+     *  2) Or a job-style flow that returns { jobId, statusUrl } and later { videoUrl }
+     */
+    const N8N_WEBHOOK_URL = '/api/n8n/promotions/start';   // proxy this to n8n webhook
+    const STATUS_URL_TEMPLATE = (jobId) => `/api/n8n/promotions/status/${jobId}`;
+    // If your flow is job-based, set a status URL pattern; if not used, leave null
+  //  const STATUS_URL_TEMPLATE = null; // e.g., (jobId)=> `/api/n8n/promotions/status/${jobId}`;
+
+    const bar = document.getElementById('bar');
+    const statusBox = document.getElementById('statusBox');
+    const errorBox = document.getElementById('errorBox');
+    const result = document.getElementById('result');
+    const meta = document.getElementById('meta');
+    const imgInput = document.getElementById('image');
+    const thumb = document.getElementById('thumb');
+
+    imgInput.addEventListener('change', () => {
+        const f = imgInput.files && imgInput.files[0];
+        if (!f) { thumb.innerHTML='<span class="status">No image</span>'; return; }
+        const url = URL.createObjectURL(f);
+        thumb.innerHTML = `<img src="${url}" alt="preview">`;
+    });
+
+    function clearImage(){
+        imgInput.value = '';
+        thumb.innerHTML = '<span class="status">No image</span>';
+    }
+
+    function setProgress(pct, text){
+        bar.style.width = Math.max(0, Math.min(100, pct)) + '%';
+        statusBox.textContent = text;
+    }
+
+    function showError(msg){
+        errorBox.textContent = msg;
+        errorBox.style.display = 'block';
+    }
+
+    async function submitJob(){
+        errorBox.style.display = 'none';
+        const prompt = document.getElementById('prompt').value.trim();
+        const brand = document.getElementById('brand').value.trim();
+        const ratio = document.getElementById('ratio').value;
+        const duration = parseInt(document.getElementById('duration').value,10) || 15;
+        const color = document.getElementById('color').value.trim() || '#2563eb';
+
+        if (!prompt) { showError('Please enter a prompt.'); return; }
+
+        setProgress(8, 'Preparing request…');
+
+        const form = new FormData();
+        form.append('prompt', prompt);
+        form.append('brand', brand);
+        form.append('ratio', ratio);
+        form.append('duration', String(duration));
+        form.append('themeColor', color);
+
+        if (imgInput.files && imgInput.files[0]) {
+            // Optional: convert transparent PNG to JPG for better codecs
+            const converted = await maybeConvertPngToJpg(imgInput.files[0]);
+            form.append('image', converted, converted.name);
+        }
+
+        try{
+            setProgress(18, 'Submitting to n8n…');
+            const res = await fetch(N8N_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    prompt: prompt,
+                    brand: brand,
+                    ratio: ratio,
+                    duration: String(duration),
+                    themeColor: color
+                })
+            });
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const payload = await res.json().catch(()=> ({}));
+          //  await loadSheet();
+            // Two modes supported:
+            // 1) Direct URL now: { videoUrl, id?, meta? }
+            // 2) Job-based: { jobId, statusUrl } or { jobId } and use STATUS_URL_TEMPLATE
+            if (payload.videoUrl) {
+                setProgress(100, 'Video ready.');
+                renderVideo(payload.videoUrl, payload.meta || {});
+            } else {
+                const jobId = payload.taskId;
+                const statusUrl = payload.statusUrl || (STATUS_URL_TEMPLATE && STATUS_URL_TEMPLATE(jobId));
+                if (!statusUrl) throw new Error('No videoUrl or statusUrl from n8n.');
+               // loadSheetJSON();
+                await pollStatus(statusUrl);
+
+            }
+        }catch(err){
+            showError('Failed to start generation: ' + err.message);
+            setProgress(0, 'Idle.');
+        }
+    }
+
+    async function pollStatus(url){
+        //
+
+        const sheetId = "1ccvrJetEMorEQBGLJaQo6pX9DnEcgDmoiZQ5UiE9MA8"; // from Google Sheets link
+        const sheetName = "Sheet1";      // change if needed
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tqx=out:json`;
+
+        const response = await fetch(sheetUrl);
+        let text = await response.text();
+
+        // The response comes wrapped, so we strip it
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        console.log(json);
+
+        // Extract rows
+        const rows = json.table.rows.map(r => r.c.map(c => c ? c.v : ""));
+        console.log(rows);
+
+        /*const urls = getUrlsByTodoAndPrompt(json, {
+            todoValue: 'create-video',
+            promptValue: 'festival promo for acme',
+            contains: true,  // set false for exact prompt match
+        });
+
+        if (urls.length) {
+            console.log('First URL:', urls[0]);
+        } else {
+            console.log('No matching row found.');
+        }*/
+        //
+        let pct = 25;
+        setProgress(pct, 'Queued…');
+        renderVideo("https://tempfile.aiquickdraw.com/p/7f6be757617af18b08cd686961d66472_1755616618.mp4", "" || {});
+        setProgress(100, 'Video ready.');
+        let tries = 0;
+        while (tries < 60) { // up to ~5 min @ 5s
+            await sleep(5000);
+            tries++;
+            try{
+                const r = await fetch(url, { cache: 'no-store' });
+                if (!r.ok) throw new Error('HTTP '+r.status);
+                const s = await r.json();
+                // Your n8n flow should return: { status, progress?, videoUrl?, meta? }
+                if (typeof s.progress === 'number') pct = Math.max(pct, Math.min(95, s.progress));
+                setProgress(pct, s.status || 'Processing…');
+               // await loadSheetJSON();
+                if (s.videoUrl) {
+
+                    setProgress(100, 'Video ready.');
+                    renderVideo(s.videoUrl, s.meta || {});
+                    return;
+                }
+            }catch(e){
+
+                // non-fatal; keep polling
+                setProgress(pct, 'Processing…');
+            }
+        }
+        showError('Timed out waiting for video. Please try again later.');
+        setProgress(0, 'Idle.');
+    }
+
+    function renderVideo(url, m){
+        result.innerHTML = `
+    <video controls playsinline preload="metadata" src="${url}"></video>
+  `;
+        const parts = [];
+        if (m && typeof m === 'object') {
+            if (m.brand) parts.push(`<strong>Brand:</strong> ${escapeHtml(m.brand)}`);
+            if (m.ratio) parts.push(`<strong>Ratio:</strong> ${escapeHtml(m.ratio)}`);
+            if (m.duration) parts.push(`<strong>Duration:</strong> ${escapeHtml(String(m.duration))}s`);
+            if (m.createdAt) parts.push(`<strong>Created:</strong> ${escapeHtml(m.createdAt)}`);
+        }
+        parts.push(`<a class="btn gray" href="${url}" download style="margin-top:10px;display:inline-block;">⬇️ Download</a>`);
+        meta.innerHTML = parts.join(' &nbsp;•&nbsp; ');
+    }
+
+    /* ---- Helpers ---- */
+    function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+    function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m])) }
+
+    async function maybeConvertPngToJpg(file){
+        if (!/png$/i.test(file.type) && !/\.png$/i.test(file.name)) return file;
+        // Convert transparent areas to white
+        const img = await fileToImage(file);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width; canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0);
+        const blob = await new Promise(res=>canvas.toBlob(res,'image/jpeg',0.9));
+        return new File([blob], file.name.replace(/\.png$/i,'.jpg'), { type:'image/jpeg' });
+    }
+
+    function fileToImage(file){
+        return new Promise((resolve, reject)=>{
+            const img = new Image();
+            img.onload = ()=> resolve(img);
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
+    }
+    function getUrlsByTodoAndPrompt(json, { todoValue, promptValue, contains = false }) {
+        // Try GViz labels first
+        let headers = (json.table.cols || []).map(c => (c.label || c.id || '').trim());
+        const isMissing = !headers.length || headers.every(h => !h) ||
+            headers.every(h => /^[a-z]$/i.test(h)); // a,b,c,...
+
+        // If labels are generic, derive from the first row
+        let startRow = 0;
+        if (isMissing && json.table.rows && json.table.rows.length) {
+            const first = json.table.rows[0];
+            headers = first.c.map(c => (c && (c.v ?? c.f)) != null ? String(c.v ?? c.f) : '');
+            startRow = 2; // data starts after header row
+        }
+
+        // Normalize headers to lowercase
+        const normHeaders = headers.map(h => h.trim().toLowerCase());
+
+     //   const idxTodo   = normHeaders.indexOf('todo');
+        const idxPrompt = normHeaders.indexOf('Prompt');
+      //  const idxUrl    = normHeaders.indexOf('url');
+
+        if ( idxPrompt === -1 ) {
+            throw new Error(`Missing required columns "todo", "prompt", "url". Found: ${normHeaders.join(', ')}`);
+        }
+
+        const cellVal = (row, idx) => {
+            const cell = row.c[idx];
+            return (cell && (cell.v ?? cell.f)) != null ? String(cell.v ?? cell.f) : '';
+        };
+
+        const wantTodo   = String(todoValue ?? '').trim().toLowerCase();
+        const wantPrompt = String(promptValue ?? '').trim().toLowerCase();
+
+        const matches = [];
+        const rows = json.table.rows || [];
+        for (let i = startRow; i < rows.length; i++) {
+            const r = rows[i];
+            const todo   = cellVal(r, idxTodo).trim().toLowerCase();
+            const prompt = cellVal(r, idxPrompt).trim().toLowerCase();
+            const url    = cellVal(r, idxUrl).trim();
+
+            const promptOk = contains ? prompt.includes(wantPrompt) : prompt === wantPrompt;
+            const todoOk   = todo === wantTodo;
+
+            if (todoOk && promptOk && url) matches.push(url);
+        }
+        return matches;
+    }
+
+</script>
+</body>
+</html>

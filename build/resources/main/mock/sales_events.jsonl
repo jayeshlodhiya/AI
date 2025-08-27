@@ -1,0 +1,3 @@
+{"invoice_no":"INV-1000","phone":"+919999000001","channel":"pos","items":[{"sku":"SKU-302","qty":1,"price":52000,"variant":"M"}],"timestamp":"2025-07-15T12:00:00+05:30"}
+{"invoice_no":"INV-1001","phone":"+919999000002","channel":"pos","items":[{"sku":"SKU-900","qty":1,"price":999,"variant":"M"}],"timestamp":"2025-07-16T13:00:00+05:30"}
+{"invoice_no":"INV-1002","phone":"+919999000003","channel":"pos","items":[{"sku":"SKU-950","qty":1,"price":2999,"variant":"Std"}],"timestamp":"2025-07-16T16:30:00+05:30"}

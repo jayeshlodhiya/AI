@@ -1,0 +1,9 @@
+sku,variant,qty,reorderLevel,location
+SKU-302,18in|22K|Gold,3,12,LOC-A2
+SKU-221,20in|22K|Gold,2,10,LOC-A1
+SKU-110,Std|Silver|Rhodium,5,20,LOC-B4
+SKU-507,Std|Platinum,4,8,LOC-D1
+SKU-900,M|Black|Cotton,18,12,RACK-T1
+SKU-901,L|Black|Cotton,8,12,RACK-T1
+SKU-950,20000mAh|18W|Black,22,10,ELEC-03
+SKU-951,10000mAh|15W|White,5,12,ELEC-03

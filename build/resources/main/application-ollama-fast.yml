@@ -1,0 +1,18 @@
+# Fast Ollama Configuration Profile
+# Use this for quick responses with smaller models
+
+app:
+  llm:
+    provider: ollama
+    model: llama3:8b-instruct    # Fast, lightweight model
+    base-url: http://localhost:11434
+    api-key: ""
+    # Fast timeout settings
+    connect-timeout: 5000        # 5 seconds for connection
+    read-timeout: 30000          # 30 seconds for response
+
+# Enable debug logging for LLM operations
+logging:
+  level:
+    com.retailai.service.LlmClient: DEBUG
+    org.springframework.web.client: DEBUG

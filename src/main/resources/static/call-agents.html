@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Call Agents</title>
+    <style>
+        :root{
+            --bg:#f4f6f8; --panel:#fff; --border:#e5e7eb; --text:#0f172a; --muted:#6b7280;
+            --primary:#2563eb; --radius:16px; --shadow:0 6px 18px rgba(2,6,23,.08);
+        }
+        body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;}
+        .wrap{padding:16px;display:grid;gap:16px;}
+        .grid{display:grid;grid-template-columns: 1.2fr 2fr; gap:16px;}
+        .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+        .card .header{padding:12px 14px;border-bottom:1px solid var(--border);font-weight:800;display:flex;align-items:center;gap:8px;}
+        .card .body{padding:12px 14px;}
+        .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+        .toolbar input,.toolbar select{padding:8px 10px;border:1px solid var(--border);border-radius:10px;outline:none;}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:10px;border-bottom:1px solid var(--border);text-align:left}
+        thead th{font-size:12px;color:#6b7280;letter-spacing:.4px;text-transform:uppercase}
+        .badge{padding:3px 8px;border-radius:999px;font-size:12px;font-weight:700}
+        .badge.inbound{background:#e0f2fe;color:#075985}
+        .badge.outbound{background:#dcfce7;color:#166534}
+        .badge.missed{background:#fee2e2;color:#991b1b}
+        .pill{background:#eef2ff;color:#3730a3;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:700}
+        .transcript{white-space:pre-wrap;line-height:1.45}
+        .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+        .btn{border:0;border-radius:10px;padding:8px 10px;font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+        .btn.primary{background:var(--primary);color:#fff}
+        .btn.gray{background:#f1f5f9}
+        .audio{display:flex;align-items:center;gap:8px}
+        .summary{background:#f8fafc;border:1px solid var(--border);border-radius:10px;padding:10px}
+        .chips{display:flex;gap:6px;flex-wrap:wrap}
+        .chip{background:#f1f5ff;color:#1d4ed8;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:700}
+        @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    </style>
+</head>
+<body>
+<div class="wrap">
+
+    <div class="grid">
+        <!-- Calls List -->
+        <section class="card">
+            <div class="header">📞 Call Queue & History</div>
+            <div class="body">
+                <div class="toolbar">
+                    <input id="searchCalls" placeholder="Search by name, number, notes…" oninput="renderTable()"/>
+                    <select id="dirFilter" onchange="renderTable()">
+                        <option value="">All Directions</option>
+                        <option value="inbound">Inbound</option>
+                        <option value="outbound">Outbound</option>
+                        <option value="missed">Missed</option>
+                    </select>
+                    <select id="agentFilter" onchange="renderTable()">
+                        <option value="">All Agents</option>
+                    </select>
+                    <button class="btn gray" onclick="resetFilters()">Reset</button>
+                </div>
+
+                <div style="height:10px"></div>
+                <div style="overflow:auto;border:1px solid var(--border);border-radius:12px;">
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Time</th><th>Customer</th><th>Number</th><th>Dir</th><th>Agent</th><th>Dur</th><th>Disposition</th>
+                        </tr>
+                        </thead>
+                        <tbody id="callsTbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call Detail -->
+        <section class="card">
+            <div class="header">📝 Call Detail & AI Summary</div>
+            <div class="body" id="detail">
+                <div style="color:#6b7280">Select a call to view transcript & summary.</div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Quick actions -->
+    <section class="card">
+        <div class="header">⚙️ AI Call Actions</div>
+        <div class="body">
+            <div class="row">
+                <button class="btn primary" onclick="simulateOutbound()">📲 Place Outbound (mock)</button>
+                <button class="btn gray" onclick="simulateInbound()">⏺️ Simulate Inbound (mock)</button>
+                <span class="pill">Demo mode</span>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+<script>
+    /* ---------- Mock data ---------- */
+    const agents = ["Aditi (AI)", "Rahul (AI)", "Sanjana (AI)"];
+    const calls = [
+        {
+            id:"c-1001", ts:"2025-08-16 11:24", customer:"UPRISE Infra", number:"+91 7350348860",
+            direction:"outbound", agent:"Aditi (AI)", duration:"06:42", disposition:"Interested / Request Quote",
+            summary:{
+                intent:"Enquiry for MacBook 14\" M4 — corporate purchase.",
+                outcome:"Shared price ₹1,69,900, offered 2% corp discount; requested invoice & stock check.",
+                nextSteps:["Email formal quote","Follow-up on 2025-08-18","Check stock ETA"]
+            },
+            transcript:
+                `Agent: Hi, is this UPRISE Infra and Interior Services?
+Cust: Yes, speaking.
+Agent: Calling regarding your MacBook Pro 14” M4 enquiry. We have Silver in stock.
+Cust: What's the price and delivery?
+Agent: ₹1,69,900, delivery in 48 hrs. We can do 2% corp discount.
+Cust: Please send a formal quote and invoice details.
+Agent: Sure. Will email and follow up on Monday.
+Cust: Thanks.`
+        },
+        {
+            id:"c-1002", ts:"2025-08-16 15:07", customer:"Priya Shah", number:"+91 90000 00002",
+            direction:"inbound", agent:"Rahul (AI)", duration:"03:18", disposition:"Site Visit Scheduled",
+            summary:{
+                intent:"2BHK under ₹80L near Hinjewadi.",
+                outcome:"Suggested Skyline Vista & North Square; booked visit Saturday 4PM.",
+                nextSteps:["Send location map","WhatsApp confirmation","Prepare brochure pack"]
+            },
+            transcript:
+                `Cust: Hi, I saw your ad for 2BHK near Hinjewadi.
+Agent: Happy to help. Budget & timeline?
+Cust: ₹80L, within 2 months.
+Agent: Recommending Skyline Vista & North Square; can I set a site visit?
+Cust: Saturday 4PM works.
+Agent: Booked. Sending details on WhatsApp.`
+        },
+        {
+            id:"c-1003", ts:"2025-08-17 10:54", customer:"Amit Verma", number:"+91 90000 00003",
+            direction:"missed", agent:"Sanjana (AI)", duration:"00:00", disposition:"Missed",
+            summary:{
+                intent:"—",
+                outcome:"No connect.",
+                nextSteps:["Auto callback at 12:00","Send SMS callback link"]
+            },
+            transcript:`No audio.`
+        }
+    ];
+
+    /* ---------- Populate filters ---------- */
+    (function init(){
+        const sel = document.getElementById('agentFilter');
+        agents.forEach(a=>{
+            const o=document.createElement('option'); o.value=a; o.textContent=a; sel.appendChild(o);
+        });
+        renderTable();
+    })();
+
+    function resetFilters(){
+        document.getElementById('searchCalls').value='';
+        document.getElementById('dirFilter').value='';
+        document.getElementById('agentFilter').value='';
+        renderTable();
+    }
+
+    /* ---------- Render table ---------- */
+    function renderTable(){
+        const q = (document.getElementById('searchCalls').value||'').toLowerCase();
+        const dir = document.getElementById('dirFilter').value;
+        const agent = document.getElementById('agentFilter').value;
+
+        const rows = calls.filter(c=>{
+            if (dir && c.direction!==dir) return false;
+            if (agent && c.agent!==agent) return false;
+            if (q){
+                const blob = `${c.customer} ${c.number} ${c.disposition} ${c.summary?.intent||''} ${c.summary?.outcome||''}`.toLowerCase();
+                if (!blob.includes(q)) return false;
+            }
+            return true;
+        }).map(c=>`
+    <tr onclick="showDetail('${c.id}')" style="cursor:pointer;">
+      <td>${c.ts}</td>
+      <td>${escapeHtml(c.customer)}</td>
+      <td>${escapeHtml(c.number)}</td>
+      <td><span class="badge ${c.direction}">${c.direction}</span></td>
+      <td>${escapeHtml(c.agent)}</td>
+      <td>${c.duration}</td>
+      <td>${escapeHtml(c.disposition)}</td>
+    </tr>
+  `).join('');
+
+        document.getElementById('callsTbody').innerHTML = rows || `<tr><td colspan="7" style="color:#6b7280;">No calls</td></tr>`;
+    }
+
+    /* ---------- Detail panel ---------- */
+    function showDetail(id){
+        const c = calls.find(x=>x.id===id);
+        if(!c) return;
+        const {summary:s} = c;
+        const chips = (s?.nextSteps||[]).map(x=>`<span class="chip">${escapeHtml(x)}</span>`).join('');
+        document.getElementById('detail').innerHTML = `
+    <div class="row" style="justify-content:space-between;">
+      <div>
+        <div style="font-weight:800">${escapeHtml(c.customer)}</div>
+        <div style="font-size:12px;color:#6b7280;">${escapeHtml(c.number)} • ${c.ts} • <span class="badge ${c.direction}">${c.direction}</span> • ${escapeHtml(c.agent)}</div>
+      </div>
+      <div class="audio">
+        <button class="btn gray" onclick="mockPlay('${id}')">▶️ Play (mock)</button>
+        <button class="btn gray" onclick="downloadTxt('${id}')">⬇️ Transcript</button>
+      </div>
+    </div>
+
+    <div style="height:10px"></div>
+    <div class="summary">
+      <div><strong>Intent:</strong> ${escapeHtml(s?.intent||'-')}</div>
+      <div><strong>Outcome:</strong> ${escapeHtml(s?.outcome||'-')}</div>
+      <div style="margin-top:6px" class="chips">${chips}</div>
+    </div>
+
+    <div style="height:10px"></div>
+    <div style="font-weight:800;margin-bottom:6px;">Transcript</div>
+    <div class="transcript">${escapeHtml(c.transcript)}</div>
+  `;
+    }
+
+    function mockPlay(id){
+        alert('Playing call ' + id + ' (demo)');
+    }
+
+    function downloadTxt(id){
+        const c = calls.find(x=>x.id===id);
+        if(!c) return;
+        const blob = new Blob([c.transcript], {type:'text/plain'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `transcript_${id}.txt`;
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    /* ---------- Utils ---------- */
+    function escapeHtml(str){ return String(str||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])) }
+</script>
+</body>
+</html>
