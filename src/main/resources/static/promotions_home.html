@@ -4,7 +4,6 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Promotions Studio</title>
-
     <style>
         :root{
             --bg:#f4f6f8; --panel:#fff; --border:#e5e7eb; --text:#0f172a; --muted:#64748b;
@@ -39,7 +38,6 @@
         .err{color:var(--bad)}
         @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
     </style>
-
 </head>
 <body>
 <div class="wrap">
@@ -47,7 +45,7 @@
     <div class="grid">
         <!-- Left: Form -->
         <section class="card">
-            <div class="header">🎬 Create Promotions</div>
+            <div class="header">🎬 Create Promotion</div>
             <div class="body">
                 <div class="field">
                     <label><strong>Prompt</strong> <span class="status">Describe the brand/product, tone, offers, CTA</span></label>
@@ -181,12 +179,11 @@
         }
 
         try{
-            setProgress(18, 'Submitting..');
+            setProgress(18, 'Submitting to n8n…');
             const res = await fetch(N8N_WEBHOOK_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    cname : "Atria",
                     prompt: prompt,
                     brand: brand,
                     ratio: ratio,
@@ -197,7 +194,6 @@
 
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const payload = await res.json().catch(()=> ({}));
-            console.log("Response from video generation : ",payload);
           //  await loadSheet();
             // Two modes supported:
             // 1) Direct URL now: { videoUrl, id?, meta? }
@@ -206,11 +202,11 @@
                 setProgress(100, 'Video ready.');
                 renderVideo(payload.videoUrl, payload.meta || {});
             } else {
-                let jobId = payload;
-               const statusUrl = payload.statusUrl || (STATUS_URL_TEMPLATE && STATUS_URL_TEMPLATE(jobId));
+                const jobId = payload.taskId;
+                const statusUrl = payload.statusUrl || (STATUS_URL_TEMPLATE && STATUS_URL_TEMPLATE(jobId));
                 if (!statusUrl) throw new Error('No videoUrl or statusUrl from n8n.');
                // loadSheetJSON();
-                await pollStatus(jobId);
+                await pollStatus(statusUrl);
 
             }
         }catch(err){
@@ -219,28 +215,56 @@
         }
     }
 
-    async function pollStatus(jobId){
-     let statusUrl = "http://localhost:8082/api/n8n/promotions/status/"+jobId;
-     console.log("Status url : ",statusUrl);
-      let pct = 25;
+    async function pollStatus(url){
+        //
+
+        const sheetId = "1ccvrJetEMorEQBGLJaQo6pX9DnEcgDmoiZQ5UiE9MA8"; // from Google Sheets link
+        const sheetName = "Sheet1";      // change if needed
+        const sheetUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tqx=out:json`;
+
+        const response = await fetch(sheetUrl);
+        let text = await response.text();
+
+        // The response comes wrapped, so we strip it
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+        console.log(json);
+
+        // Extract rows
+        const rows = json.table.rows.map(r => r.c.map(c => c ? c.v : ""));
+        console.log(rows);
+
+        /*const urls = getUrlsByTodoAndPrompt(json, {
+            todoValue: 'create-video',
+            promptValue: 'festival promo for acme',
+            contains: true,  // set false for exact prompt match
+        });
+
+        if (urls.length) {
+            console.log('First URL:', urls[0]);
+        } else {
+            console.log('No matching row found.');
+        }*/
+        //
+        let pct = 25;
         setProgress(pct, 'Queued…');
-       // renderVideo("https://tempfile.aiquickdraw.com/p/7f6be757617af18b08cd686961d66472_1755616618.mp4", "" || {});
-       // setProgress(100, 'Video ready.');
+        renderVideo("https://tempfile.aiquickdraw.com/p/7f6be757617af18b08cd686961d66472_1755616618.mp4", "" || {});
+        setProgress(100, 'Video ready.');
         let tries = 0;
         while (tries < 60) { // up to ~5 min @ 5s
             await sleep(5000);
             tries++;
             try{
-                const r = await fetch(statusUrl, { cache: 'no-store' });
-              const urlToPlay = await r.text();
-                console.log("Resonse of status :",urlToPlay);
-                if (!r.ok) throw new Error('HTTP '+urlToPlay.status);
-
+                const r = await fetch(url, { cache: 'no-store' });
+                if (!r.ok) throw new Error('HTTP '+r.status);
+                const s = await r.json();
+                // Your n8n flow should return: { status, progress?, videoUrl?, meta? }
+                if (typeof s.progress === 'number') pct = Math.max(pct, Math.min(95, s.progress));
+                setProgress(pct, s.status || 'Processing…');
                // await loadSheetJSON();
-                if (r) {
+                if (s.videoUrl) {
 
                     setProgress(100, 'Video ready.');
-                    renderVideo(urlToPlay, urlToPlay.meta || {});
+                    renderVideo(s.videoUrl, s.meta || {});
                     return;
                 }
             }catch(e){
@@ -293,7 +317,54 @@
             img.src = URL.createObjectURL(file);
         });
     }
+    function getUrlsByTodoAndPrompt(json, { todoValue, promptValue, contains = false }) {
+        // Try GViz labels first
+        let headers = (json.table.cols || []).map(c => (c.label || c.id || '').trim());
+        const isMissing = !headers.length || headers.every(h => !h) ||
+            headers.every(h => /^[a-z]$/i.test(h)); // a,b,c,...
 
+        // If labels are generic, derive from the first row
+        let startRow = 0;
+        if (isMissing && json.table.rows && json.table.rows.length) {
+            const first = json.table.rows[0];
+            headers = first.c.map(c => (c && (c.v ?? c.f)) != null ? String(c.v ?? c.f) : '');
+            startRow = 2; // data starts after header row
+        }
+
+        // Normalize headers to lowercase
+        const normHeaders = headers.map(h => h.trim().toLowerCase());
+
+     //   const idxTodo   = normHeaders.indexOf('todo');
+        const idxPrompt = normHeaders.indexOf('Prompt');
+      //  const idxUrl    = normHeaders.indexOf('url');
+
+        if ( idxPrompt === -1 ) {
+            throw new Error(`Missing required columns "todo", "prompt", "url". Found: ${normHeaders.join(', ')}`);
+        }
+
+        const cellVal = (row, idx) => {
+            const cell = row.c[idx];
+            return (cell && (cell.v ?? cell.f)) != null ? String(cell.v ?? cell.f) : '';
+        };
+
+        const wantTodo   = String(todoValue ?? '').trim().toLowerCase();
+        const wantPrompt = String(promptValue ?? '').trim().toLowerCase();
+
+        const matches = [];
+        const rows = json.table.rows || [];
+        for (let i = startRow; i < rows.length; i++) {
+            const r = rows[i];
+            const todo   = cellVal(r, idxTodo).trim().toLowerCase();
+            const prompt = cellVal(r, idxPrompt).trim().toLowerCase();
+            const url    = cellVal(r, idxUrl).trim();
+
+            const promptOk = contains ? prompt.includes(wantPrompt) : prompt === wantPrompt;
+            const todoOk   = todo === wantTodo;
+
+            if (todoOk && promptOk && url) matches.push(url);
+        }
+        return matches;
+    }
 
 </script>
 </body>
