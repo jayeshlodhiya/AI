@@ -142,4 +142,24 @@ public class QCallService {
             throw new IllegalStateException("Failed to parse JSON: " + e.getMessage() + " | payload=" + json, e);
         }
     }
+
+    public List<Map<String, Object>> listPlayground() {
+        String url = baseUrl + "/playground/list";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(apiKey);               // Try Bearer first
+        headers.set("x-api-key", apiKey);            // Also send x-api-key (some APIs accept this)
+        headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        ResponseEntity<String> resp = restTemplate.exchange(
+                url, HttpMethod.GET, entity, String.class);
+
+        if (!resp.getStatusCode().is2xxSuccessful()) {
+            throw new IllegalStateException("QCall listAssistants failed: " + resp);
+        }
+
+        return parseAssistantList(resp.getBody());
+    }
 }

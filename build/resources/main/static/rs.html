@@ -215,6 +215,20 @@
         #promotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
         #micBtn.listening { background:#fee2e2; color:#b91c1c; }
 
+        #promotionsSection { height: 100%; }
+        #promotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+        #promotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+        #promotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+        #promotionsSection { height: 100%; }
+        #promotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+        #promotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+        #promotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+        #micBtn.listening { background:#fee2e2; color:#b91c1c; }
+
+        #chatSection { height: 100%; }
+        #chatSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+        #chatSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+        #chatFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
 
     </style>
 </head>
@@ -236,6 +250,7 @@
             <li onclick="showSection('virtualTours', event)">🧭 Virtual Tours</li>
             <li onclick="showSection('promotions')">📢 Promotions</li>
             <li onclick="showSection('analytics', event)">📈 Analytics</li>
+            <li onclick="showSection('chat', event)">📈 Chat</li>
         </ul>
     </aside>
 
@@ -595,38 +610,26 @@
         </div>
 
         <!-- Virtual Tours Section -->
-        <div id="virtualToursSection" class="content-section">
-            <div class="grid">
-                <section class="card">
-                    <div class="header">Virtual Tour Manager</div>
-                    <div class="body">
-                        <div style="display:grid; gap:12px;">
-                            <div style="background:#f8fafc; padding:16px; border-radius:8px; text-align:center;">
-                                <div style="font-size:48px; margin-bottom:8px;">🏠</div>
-                                <div style="font-weight:600; margin-bottom:4px;">Schedule Virtual Tour</div>
-                                <div style="color:#6b7280; font-size:14px;">Let customers explore properties from anywhere</div>
-                            </div>
-                            <div style="display:flex; gap:10px;">
-                                <select id="tourProperty" style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; outline:none;">
-                                    <option value="">Select Property</option>
-                                    <option value="skyline-vista">Skyline Vista - Wakad</option>
-                                    <option value="tech-meadows">Tech Meadows - Hinjewadi</option>
-                                    <option value="highstreet-park">Highstreet Park - Baner</option>
-                                </select>
-                                <button class="btn primary" onclick="scheduleVirtualTour()">📹 Start Tour</button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                <section class="card">
-                    <div class="header">Recent Tours</div>
-                    <div class="body">
-                        <div id="recentTours">
-                            <div style="color:#6b7280">No recent virtual tours scheduled.</div>
-                        </div>
-                    </div>
-                </section>
-            </div>
+        <div id="chatSection" class="content-section">
+            <section class="assistant">
+                <div class="header" style="padding:14px 16px; border-bottom:1px solid var(--border); font-weight: 800;">AI Assistant
+                    <select id="voiceLang" title="Language" style="border:1px solid var(--border); border-radius:10px; padding:8px;">
+                        <option value="hi-IN">Hindi (hi-IN)</option>
+                        <option value="en-US">English (en-US)</option>
+                    </select>
+                </div>
+                <div class="chat" id="chat">
+                    <div class="msg ai">Hello! Ask me anything from your uploaded documents.</div>
+                </div>
+                <div class="composer">
+
+                    <input id="chatInput" placeholder="Ask AI… e.g., 2BHK in Wakad under 80L or ?payment schedule" />
+                    <label class="toggle" hidden="hidden"><input type="checkbox" hidden="hidden" checked="checked" id="searchModeToggle"></label>
+
+                    <button class="btn" id="micBtn" title="Speak" onclick="toggleVoice()" style="min-width:44px;">🎙️</button>
+                    <button class="btn primary" onclick="sendChat()">Send</button>
+                </div>
+            </section>
         </div>
         <!-- Promotions Section -->
         <div id="promotionsSection" class="content-section">
@@ -709,6 +712,7 @@
                 </section>
             </div>
         </div>
+
     </main>
 
     <!-- Right Panel: AI Assistant -->
@@ -1130,6 +1134,13 @@
             iframe.src = '/promotions.html';
         }
     }
+    function loadChat() {
+        const iframe = document.getElementById('chatFrame');
+        if (iframe && !iframe.src) {
+            // absolute path so it works regardless of current route
+            iframe.src = '/chat.html';
+        }
+    }
 
 
     /* ---------- Section Management ---------- */
@@ -1147,6 +1158,7 @@
         else if (sectionName === 'documents')   loadDocuments();
         else if (sectionName === 'callAgents')  loadCallAgents();
         else if (sectionName === 'promotions')  loadPromotions();
+        else if (sectionName === 'chat')  loadChat();
     }
 
     /* ---------- Inventory ---------- */
