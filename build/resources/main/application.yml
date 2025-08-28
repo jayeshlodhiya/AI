@@ -57,3 +57,7 @@ springdoc:
     operationsSorter: method
   profiles:
    active: mysql
+
+qcall:
+  base-url: https://api.qcall.ai/api/v1
+  api-key: 39c0a97e-befd-4476-aa5e-14699734cadd   # put the real key in env var QCALL_API_KEY

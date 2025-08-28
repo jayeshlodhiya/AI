@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Call Assistants</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg:#f7f8fb; --panel:#fff; --text:#0f172a; --muted:#6b7280;
+            --border:#e5e7eb; --radius:18px; --shadow:0 8px 24px rgba(16,24,40,.06);
+            --chip-bg:#eaf6ee; --chip-text:#166534; /* OUTBOUND */
+            --brand:#6c4df6; --brand-strong:#5b3df0; /* Test button */
+            --line:#e7edf7;
+        }
+        *{box-sizing:border-box}
+        body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Arial;padding:18px}
+
+        .card{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px}
+        .card .header{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;display:flex;align-items:center;justify-content:space-between}
+        .card .body{padding:16px}
+
+        .btn{border:0;border-radius:14px;padding:12px 18px;font-weight:700;display:inline-flex;gap:10px;align-items:center;cursor:pointer;box-shadow:var(--shadow);transition:background .15s ease, transform .06s ease}
+        .btn:active{transform:translateY(1px)}
+        .btn.gray{background:#f3f4f6;color:#1f2937;border:1px solid var(--border)}
+        .btn.primary{background:var(--brand);color:#fff}
+        .btn.primary:hover{background:var(--brand-strong)}
+        .btn[disabled]{opacity:.6;cursor:not-allowed}
+
+        .input{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#fff}
+
+        .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:18px}
+
+        /* ---------- Assistant Card ---------- */
+        .agent-card{border:1px solid #dbe2f0;border-radius:20px;padding:18px;background:#fff;display:grid;gap:14px}
+        .agent-top{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;
+            background: radial-gradient(120px 40px at 40% 22%, rgba(108,77,246,.06), transparent 60%);
+            border-radius:16px;padding:8px}
+        .agent-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;background:#e5e7eb}
+        .agent-name{font-size:20px;font-weight:700;letter-spacing:.2px}
+        .agent-menu{width:36px;height:36px;border-radius:12px;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+        .badge{display:inline-flex;align-items:center;padding:8px 14px;border-radius:12px;font-weight:800;font-size:13px;background:var(--chip-bg);color:var(--chip-text);width:fit-content;margin-top:6px}
+        .agent-title{font-size:20px;line-height:1.35;font-weight:800;color:#162449;margin-top:6px}
+        .agent-company{display:flex;align-items:center;gap:10px;color:#8e2d2d;font-weight:600;margin-top:6px}
+        .briefcase{width:22px;height:22px;border-radius:6px;background:#fde8e8;display:inline-flex;align-items:center;justify-content:center;color:#b91c1c;font-size:12px}
+        .agent-id{font-size:12px;color:#64748b;margin-top:4px}
+
+        .divider{height:1px;background:var(--line);margin:10px 0;border-radius:999px}
+        .agent-actions{display:flex;gap:14px}
+        .btn.role{background:#fff;border:1px solid #dbe2f0;color:#3a2e2e}
+
+        .status{font-size:13px;color:var(--muted)}
+        .spinner{width:12px;height:12px;border:2px solid #93c5fd;border-top-color:transparent;border-radius:50%;display:inline-block;animation:spin .8s linear infinite;margin-right:6px}
+        @keyframes spin{to{transform:rotate(360deg)}}
+        .assistants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 20px;
+        }
+
+        .assistant-card {
+            border: 1px solid #dbe2f0;
+            border-radius: 16px;
+            background: #fff;
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: 0 6px 18px rgba(2,6,23,.08);
+        }
+
+        .assistant-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(90deg, rgba(108,77,246,.05), transparent);
+            border-radius: 12px;
+            padding: 8px 12px;
+            gap: 12px;
+        }
+
+        .assistant-avatar {
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .assistant-name {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .assistant-badge {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 700;
+            background: #eaf6ee;
+            color: #166534;
+        }
+
+        .assistant-menu {
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+        }
+
+        .assistant-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: #162449;
+            margin: 0;
+        }
+
+        .assistant-company {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #8b2b2b;
+        }
+
+        .briefcase-ic {
+            background: #fde8e8;
+            color: #b91c1c;
+            width: 22px; height: 22px;
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .assistant-divider {
+            height: 1px;
+            border: 0;
+            background: #e7edf7;
+        }
+
+        .assistant-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+        }
+
+        .btn.role {
+            flex: 1;
+            background: #fff;
+            border: 1px solid #dbe2f0;
+            color: #3a2e2e;
+        }
+
+        .btn.test {
+            flex: 1;
+            background: #6c4df6;
+            color: #fff;
+        }
+
+
+    </style>
+</head>
+<body>
+
+<!-- Top controls -->
+<section class="card">
+    <div class="header">
+        <span>🤖 AI Call Assistants</span>
+        <div>
+            <button class="btn gray" id="refreshBtn">Refresh</button>
+            <button class="btn primary" id="openCreateBtn">➕ Create Assistant</button>
+        </div>
+    </div>
+    <div class="body">
+        <div id="statusText" class="status"><span class="spinner"></span> Loading assistants…</div>
+    </div>
+</section>
+
+
+
+<!-- Existing Assistants -->
+<!-- Existing Assistants (screenshot-style) -->
+<!-- Existing Assistants -->
+<section class="card">
+    <div class="header">
+        Existing Assistants
+        <span id="countPill" class="badge" style="display:none"></span>
+    </div>
+
+    <div class="body">
+        <!-- Grid where your JS will insert cards -->
+        <div id="assistantsList" class="assistants-grid" aria-live="polite"></div>
+        <div id="emptyState" class="status" style="display:none">No assistants found.</div>
+    </div>
+
+    <!-- Template for one assistant card -->
+    <template id="assistantCardTemplate">
+        <article class="assistant-card" data-assistant-id="">
+            <!-- Top: avatar + name + badge + menu -->
+            <header class="assistant-top">
+                <img data-role="avatar" class="assistant-avatar" src="https://placehold.co/112x112" alt="Assistant avatar" />
+                <div>
+                    <h3 class="assistant-name" data-role="name">Assistant Name</h3>
+                    <span class="assistant-badge" data-role="direction">OUTBOUND</span>
+                </div>
+                <button class="assistant-menu" title="More actions">⋯</button>
+            </header>
+
+            <!-- Title / use case -->
+            <h4 class="assistant-title" data-role="title">
+                Customer Engagement and Relationship Management
+            </h4>
+
+            <!-- Company row -->
+            <div class="assistant-company">
+                <span class="briefcase-ic" aria-hidden="true">💼</span>
+                <span data-role="company">Awaaz ai</span>
+            </div>
+
+            <hr class="assistant-divider" />
+
+            <!-- Actions -->
+            <div class="assistant-actions">
+
+                <button class="btn primary" data-action="assistant-call">
+                    📞 Call
+                </button>
+            </div>
+
+            <!-- Hidden inputs so your existing playgroundCall can read nm_<id> / ph_<id> -->
+            <input type="hidden" data-role="hidden-name" />
+            <input type="hidden" data-role="hidden-phone" />
+        </article>
+    </template>
+</section>
+
+
+
+<!-- Create Assistant -->
+<section class="card" id="createCard" style="display:none;">
+    <div class="header">
+        <span>Create New Assistant</span>
+        <div>
+            <button class="btn gray" id="cancelCreateBtn">Cancel</button>
+            <button class="btn primary" id="createBtn">Create</button>
+        </div>
+    </div>
+    <div class="body" style="display:grid;gap:12px">
+        <input id="ca_name" class="input" placeholder="Assistant Name" />
+        <input id="ca_company" class="input" placeholder="Company / Brand" />
+        <input id="ca_voice" class="input" placeholder="Voice (optional)" />
+        <textarea id="ca_prompt" class="input" rows="4" placeholder="System Prompt / Persona"></textarea>
+        <div id="createStatus" class="status"></div>
+    </div>
+</section>
+
+<!-- Template: Quick Test card (one per assistant, no dropdown) -->
+<template id="quickTestCardTemplate">
+    <div class="agent-card" data-assistant-id="">
+        <div class="agent-top">
+            <img class="agent-avatar" data-role="avatar" src="https://placehold.co/112x112" alt="Assistant Avatar">
+            <div>
+                <div class="agent-name" data-role="name">Assistant</div>
+                <div class="badge" data-role="direction">OUTBOUND</div>
+            </div>
+            <div class="agent-menu" title="More">⋯</div>
+        </div>
+
+        <div class="agent-title" data-role="title">Use-case / Description</div>
+        <div class="agent-company">
+            <span class="briefcase">💼</span>
+            <span data-role="company">Company</span>
+        </div>
+        <div class="agent-id">ID: <span data-role="id">—</span></div>
+
+        <div class="divider"></div>
+
+        <div style="display:flex;gap:10px">
+            <input class="input" data-role="name-input" placeholder="Customer name (optional)">
+            <input class="input" data-role="phone-input" placeholder="+917350348860">
+        </div>
+
+        <div class="agent-actions" style="margin-top:10px">
+            <button class="btn role" data-action="assistant-role" disabled>🌐 Role Play</button>
+            <button class="btn primary" data-action="assistant-test">📞 Test</button>
+        </div>
+    </div>
+</template>
+
+
+
+<script src="js/ai-call.js"></script>
+</body>
+</html>

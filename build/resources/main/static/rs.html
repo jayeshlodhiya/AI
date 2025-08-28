@@ -392,14 +392,19 @@
 
 
 
-                    <div id="callAgentsSection" class="content-section">
-                        <section class="card">
-                            <div class="header">AI Agents Calls</div>
-                            <div class="body">
-                                <iframe id="callAgentsFrame" src="/call-agents.html" title="Call Agents"></iframe>
-                            </div>
-                        </section>
-                    </div>
+        <!-- Call Agents Section -->
+        <div id="callAgentsSection" class="content-section">
+            <section class="card" style="display:flex;flex-direction:column;height:calc(100vh - 140px);">
+                <div class="header">AI Call Agents</div>
+                <div class="body" style="flex:1;display:flex;padding:0;overflow:hidden;">
+                    <iframe
+                            id="callAgentsFrame"
+                            src="ai-call.html"
+                            style="width:100%;height:100%;border:0;border-radius:0 0 var(--radius) var(--radius);">
+                    </iframe>
+                </div>
+            </section>
+        </div>
 
 
 
