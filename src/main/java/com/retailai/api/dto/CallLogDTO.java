@@ -11,6 +11,7 @@ public class CallLogDTO {
     public String created_at;
     public String assistant_name;
     public String call_transcribe; // <-- strongly typed
+    public String recording_url;
 
     public String getId() {
         return id;
@@ -76,18 +77,13 @@ public class CallLogDTO {
         this.call_transcribe = call_transcribe;
     }
 
-    @Override
-    public String toString() {
-        return "CallLogDTO{" +
-                "id='" + id + '\'' +
-                ", phone_number='" + phone_number + '\'' +
-                ", call_cost='" + call_cost + '\'' +
-                ", call_duration_in_sec=" + call_duration_in_sec +
-                ", call_sentiment=" + call_sentiment +
-                ", created_at='" + created_at + '\'' +
-                ", assistant_name='" + assistant_name + '\'' +
-                ", call_transcribe='" + call_transcribe + '\'' +
-                '}';
+    public String getRecording_url() {
+        return recording_url;
     }
+
+    public void setRecording_url(String recording_url) {
+        this.recording_url = recording_url;
+    }
+
 // ... add other fields you return ...
 }

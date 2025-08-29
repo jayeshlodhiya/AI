@@ -72,7 +72,42 @@ public class ScanIngestService {
       "chunks", chunks
     );
   }
+    public Map<String, Object> scanAndIndex(String tenant, String docType, String docId, String text) throws Exception {
+        // 1) OCR → plain text (HTTP provider; no Tesseract/JNA)
 
+
+
+
+        // 2) Chunk for RAG (≈1200 chars per chunk to keep prompts tidy)
+        final int MAX_CHARS = 1200;
+        int start = 0;
+        int chunks = 0;
+
+        while (start < text.length()) {
+            int end = Math.min(text.length(), start + MAX_CHARS);
+            String chunk = text.substring(start, end);
+            rag.index(
+                    tenant,
+                    docType,
+                    docId + "#" + chunks,
+                    chunk,
+                    List.of(docType.toLowerCase(), "scan")  // tags
+            );
+            start = end;
+            chunks++;
+        }
+
+        // 3) Return a simple receipt
+        return Map.of(
+                "status", "ok",
+                "tenant", tenant,
+                "docType", docType,
+                "docId", docId,
+                "chars", text.length(),
+                "data",text,
+                "chunks", chunks
+        );
+    }
   /**
    * Convenience helper: create a safe docId from original filename.
    */

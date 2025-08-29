@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VistaraAI — AI-First Business Suite</title>
+    <meta name="description" content="VistaraAI: Voice & Chat Assistants, RAG Knowledge, Automations, Analytics — an AI-first suite to grow your business." />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        /* ===== Theme (MotoCMS-like look) ===== */
+        :root{
+            --bg:#0d0f14; --text:#101828;
+            --brand:#6c5cff; --brand2:#00d2ff; --accent:#00d4a7;
+            --muted:#475467; --muted-2:#667085;
+            --panel:#ffffff; --panel-2:#f8f9fc;
+            --border:#e7e9f2; --shadow:0 12px 30px rgba(20,26,60,.08);
+            --radius:18px; --radius-lg:26px; --maxw:1180px;
+        }
+        *{box-sizing:border-box}
+        html,body{margin:0;padding:0}
+        body{
+            font-family:Inter,system-ui,Segoe UI,Roboto,Arial;
+            color:var(--text);
+            background:
+                    radial-gradient(1200px 600px at 80% -20%, rgba(108,92,255,.12), transparent 60%),
+                    radial-gradient(1000px 600px at -10% 120%, rgba(0,210,255,.1), transparent 65%),
+                    #f5f7ff;
+        }
+        a{color:inherit; text-decoration:none}
+        .container{max-width:var(--maxw); margin:0 auto; padding:0 20px}
+
+        /* ===== Top Bar / Header ===== */
+        .topbar{
+            background:linear-gradient(90deg, var(--brand), var(--brand2));
+            color:#fff; font-weight:700; letter-spacing:.2px;
+            text-align:center; padding:8px 16px; font-size:14px;
+        }
+        nav{
+            position:sticky; top:0; z-index:50;
+            background:#fff; border-bottom:1px solid var(--border);
+            backdrop-filter:saturate(120%) blur(8px);
+        }
+        .nav-inner{
+            display:flex; align-items:center; justify-content:space-between;
+            padding:14px 0;
+        }
+        .brand{display:flex; align-items:center; gap:12px; font-weight:800}
+        .brand-badge{
+            width:36px; height:36px; border-radius:12px;
+            background:linear-gradient(135deg, var(--brand), var(--brand2));
+            box-shadow:0 0 0 6px rgba(108,92,255,.12), inset 0 0 16px rgba(255,255,255,.3);
+        }
+        nav ul{display:flex; gap:18px; list-style:none; padding:0; margin:0}
+        .nav-link{padding:10px 12px; border-radius:10px; color:#344054}
+        .nav-link:hover{background:#f2f4f7}
+        .nav-ctas{display:flex; gap:10px; align-items:center}
+        .btn{
+            border:1px solid var(--border); background:#ffffff; color:#101828;
+            padding:10px 14px; border-radius:12px; font-weight:700; cursor:pointer;
+        }
+        .btn.primary{
+            background:linear-gradient(135deg, var(--brand), var(--brand2));
+            border:0; color:#fff;
+        }
+        .btn.ghost{background:#f2f4f7}
+        .btn.ghost:hover{background:#eaecf0}
+
+        /* ===== Hero ===== */
+        .hero{padding:52px 0 28px}
+        .hero-wrap{
+            display:grid; grid-template-columns:1.1fr .9fr; gap:24px;
+            align-items:center;
+        }
+        @media (max-width:960px){ .hero-wrap{grid-template-columns:1fr} }
+        .h-kicker{display:inline-block; color:#fff; background:linear-gradient(135deg, var(--brand), var(--brand2)); padding:6px 10px; border-radius:999px; font-weight:800}
+        .h-title{font-size:44px; line-height:1.12; margin:14px 0 8px}
+        .h-sub{color:var(--muted); font-size:16px}
+        .h-ctas{display:flex; gap:12px; margin-top:14px; flex-wrap:wrap}
+        .hero-card{
+            background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow);
+            padding:20px;
+        }
+        .showcase{
+            border:1px dashed var(--border); border-radius:14px; padding:14px;
+            background:linear-gradient(180deg,#fcfdff,#f8f9fc);
+        }
+        .show-row{display:flex; align-items:center; gap:12px; padding:10px; border-radius:10px; background:#fff; border:1px solid #eef0f6}
+        .dot{width:10px; height:10px; border-radius:50%; background:var(--brand)}
+        .badges{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+        .pill{background:#eef2ff; color:#3730a3; padding:6px 10px; border-radius:999px; font-weight:700; font-size:12px}
+
+        /* ===== Sections ===== */
+        .section{padding:48px 0}
+        .section .lead{color:var(--muted); margin-top:6px}
+        .grid{display:grid; gap:16px}
+        .g-3{grid-template-columns:repeat(3,1fr)}
+        .g-4{grid-template-columns:repeat(4,1fr)}
+        @media (max-width:960px){ .g-3,.g-4{grid-template-columns:1fr} }
+        .card{
+            background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow);
+        }
+        .card h3{margin:0 0 6px}
+        .card p{color:var(--muted)}
+        .kv{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:8px}
+        .line{height:1px; background:#eef0f6; margin:12px 0}
+
+        /* ===== Stripes ===== */
+        .stripe{
+            background:linear-gradient(180deg,#f8f9fc,#ffffff);
+            border-top:1px solid var(--border); border-bottom:1px solid var(--border);
+        }
+        .stat{
+            text-align:center; background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow)
+        }
+        .stat b{font-size:28px; color:#111827}
+
+        /* ===== Pricing ===== */
+        .table{width:100%; border-collapse:collapse; font-size:14px}
+        .table th{background:linear-gradient(135deg, var(--brand), var(--brand2)); color:#fff; padding:10px; text-align:left}
+        .table td{border:1px solid var(--border); padding:12px; background:#fff}
+        .table tr:nth-child(odd) td{background:#fbfcff}
+
+        /* ===== Testimonials ===== */
+        .t-grid{display:grid; gap:16px}
+        .t-card{background:#fff; border:1px solid var(--border); border-radius:16px; padding:18px; box-shadow:var(--shadow)}
+        .t-by{color:#667085; font-size:14px; margin-top:6px}
+
+        /* ===== CTA + QR ===== */
+        .qr-wrap{
+            display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center;
+            border:1px dashed var(--border); border-radius:16px; padding:16px; background:#fff;
+        }
+        .qr{width:160px; height:160px; border-radius:12px; border:1px solid var(--border); object-fit:contain}
+
+        /* ===== Contact ===== */
+        .form{display:grid; gap:12px}
+        .input, .textarea{
+            width:100%; padding:12px; border:1px solid var(--border); border-radius:12px; outline:none; font-size:15px; background:#fff
+        }
+        .textarea{min-height:120px; resize:vertical}
+
+        /* ===== Footer ===== */
+        footer{padding:28px 0; color:#667085; border-top:1px solid var(--border); text-align:center}
+        footer a{text-decoration:underline}
+
+        /* Smooth anchor */
+        html{scroll-behavior:smooth}
+    </style>
+</head>
+<body>
+
+<!-- Top promo -->
+<div class="topbar">AI that talks, thinks & acts — book a live demo this week.</div>
+
+<!-- Nav -->
+<nav>
+    <div class="container nav-inner">
+        <div class="brand">
+            <span class="brand-badge"></span>
+            <span>VistaraAI</span>
+        </div>
+        <ul>
+            <li><a class="nav-link" href="#features">Features</a></li>
+            <li><a class="nav-link" href="#suite">Suite</a></li>
+            <li><a class="nav-link" href="#benefits">Benefits</a></li>
+            <li><a class="nav-link" href="#pricing">Pricing</a></li>
+            <li><a class="nav-link" href="#testimonials">Stories</a></li>
+            <li><a class="nav-link" href="#contact">Contact</a></li>
+        </ul>
+        <div class="nav-ctas">
+            <a href="#demo" class="btn ghost">Live Demo</a>
+            <a href="https://vistaraai.in" target="_blank" rel="noopener" class="btn primary">Try Now</a>
+        </div>
+    </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero container">
+    <div class="hero-wrap">
+        <div>
+            <span class="h-kicker">AI-First Business Suite</span>
+            <h1 class="h-title">Voice & Chat Assistants that turn conversations into revenue.</h1>
+            <p class="h-sub">VistaraAI answers calls, qualifies leads, books meetings, sends messages, and updates your systems — 24/7, on brand, with your knowledge.</p>
+            <div class="h-ctas">
+                <a href="#features" class="btn primary">Explore Features</a>
+                <a href="#pricing" class="btn">See Pricing</a>
+            </div>
+            <div class="badges">
+                <span class="pill">Real-time Voice</span>
+                <span class="pill">RAG Knowledge</span>
+                <span class="pill">Automations</span>
+                <span class="pill">Analytics</span>
+                <span class="pill">Integrations</span>
+            </div>
+        </div>
+
+        <div class="hero-card">
+            <div class="showcase">
+                <div class="show-row"><span class="dot"></span> <b>Start a Call:</b> `/api/qcall/playground/call`</div>
+                <div class="show-row"><span class="dot" style="background:#00d4a7"></span> <b>Fetch History:</b> `/api/qcall/playgroundHistory`</div>
+                <div class="show-row"><span class="dot" style="background:#ffb703"></span> <b>RAG:</b> Ground answers in your docs, FAQs, and DBs</div>
+            </div>
+            <div class="line"></div>
+            <div class="grid g-3">
+                <div class="stat"><b>24/7</b><div>Coverage</div></div>
+                <div class="stat"><b>–60%</b><div>Support load</div></div>
+                <div class="stat"><b>+26%</b><div>Bookings (30d)</div></div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Feature tiles (MotoCMS style cards) -->
+<section id="features" class="section container">
+    <h2>Everything you need to go AI-first</h2>
+    <p class="lead">Built for speed, brand safety, and business outcomes.</p>
+    <div class="grid g-4" style="margin-top:14px">
+        <div class="card">
+            <img src="https://placehold.co/640x360/ffffff/8892a0?text=Voice" alt="Voice" style="width:100%; border-radius:12px; border:1px solid var(--border); margin-bottom:10px">
+            <h3>Real-time Voice</h3>
+            <p>Human-like conversations with barge-in, low latency, and handoff to human agents.</p>
+        </div>
+        <div class="card">
+            <img src="https://placehold.co/640x360/ffffff/8892a0?text=Chat" alt="Chat" style="width:100%; border-radius:12px; border:1px solid var(--border); margin-bottom:10px">
+            <h3>Web Chat & WhatsApp</h3>
+            <p>Embeddable chat with memory, tools, and guardrails for on-brand assistance.</p>
+        </div>
+        <div class="card">
+            <img src="https://placehold.co/640x360/ffffff/8892a0?text=RAG" alt="RAG" style="width:100%; border-radius:12px; border:1px solid var(--border); margin-bottom:10px">
+            <h3>Knowledge (RAG)</h3>
+            <p>Connect GDrive, Notion, DBs, and PDFs. Cite sources and keep knowledge fresh.</p>
+        </div>
+        <div class="card">
+            <img src="https://placehold.co/640x360/ffffff/8892a0?text=Automation" alt="Automation" style="width:100%; border-radius:12px; border:1px solid var(--border); margin-bottom:10px">
+            <h3>Automations</h3>
+            <p>Book meetings, send emails, call APIs, trigger webhooks — end-to-end workflow.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Suite blocks -->
+<section id="suite" class="section stripe">
+    <div class="container">
+        <h2>The VistaraAI Suite</h2>
+        <p class="lead">Modular pieces that click together into one powerful, measurable platform.</p>
+        <div class="grid g-3" style="margin-top:14px">
+            <div class="card">
+                <h3>Assistants</h3>
+                <div class="line"></div>
+                <div class="kv">
+                    <div>Voice</div><div>Outbound & Inbound</div>
+                    <div>Chat</div><div>Web • WhatsApp • SMS</div>
+                    <div>Brand Voice</div><div>Fine-tuned prompts</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Knowledge</h3>
+                <div class="line"></div>
+                <div class="kv">
+                    <div>Connectors</div><div>GDrive • Notion • DB</div>
+                    <div>Updates</div><div>Auto-index & version</div>
+                    <div>Citations</div><div>Factual answers</div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Automations</h3>
+                <div class="line"></div>
+                <div class="kv">
+                    <div>Calendars</div><div>Google • O365</div>
+                    <div>CRM</div><div>HubSpot • Zoho</div>
+                    <div>Webhooks</div><div>Low-code actions</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Benefits / Value props -->
+<section id="benefits" class="section container">
+    <h2>Why teams choose VistaraAI</h2>
+    <p class="lead">From first hello to closed-won — on autopilot.</p>
+    <div class="grid g-3" style="margin-top:14px">
+        <div class="card">
+            <h3>Capture more</h3>
+            <p>Instant responses 24/7 on voice & chat. Never miss a lead again.</p>
+        </div>
+        <div class="card">
+            <h3>Qualify faster</h3>
+            <p>Ask the right questions, check knowledge, and route to the right person automatically.</p>
+        </div>
+        <div class="card">
+            <h3>Act & close</h3>
+            <p>Book meetings, send proposals, update CRM, trigger webhooks — all without human toil.</p>
+        </div>
+    </div>
+</section>
+
+<!-- Demo + QR -->
+<section id="demo" class="section container">
+    <div class="card">
+        <h2>See it in action</h2>
+        <p class="lead">Scan to open a quick demo or click below.</p>
+        <div class="qr-wrap" style="margin-top:10px">
+            <div>
+                <p><b>VistaraAI Live Demo</b><br>Test real-time voice, web chat, and analytics.</p>
+                <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap">
+                    <a class="btn primary" href="https://vistaraai.in" target="_blank" rel="noopener">Open Demo</a>
+                    <a class="btn" href="mailto:contact@vistaraai.in">Talk to Sales</a>
+                </div>
+            </div>
+            <img class="qr" alt="QR to vistaraai.in" src="vistaraai_qr.png"
+                 onerror="this.onerror=null; this.src='https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https%3A%2F%2Fvistaraai.in';">
+        </div>
+    </div>
+</section>
+
+<!-- Pricing -->
+<section id="pricing" class="section stripe">
+    <div class="container">
+        <h2>Simple, scalable pricing</h2>
+        <p class="lead">Start small. Scale when you see the lift.</p>
+        <div class="card" style="overflow:auto; margin-top:14px">
+            <table class="table" aria-label="Pricing">
+                <thead><tr><th>Plan</th><th>What you get</th><th>Price / month</th></tr></thead>
+                <tbody>
+                <tr><td><b>Starter</b></td><td>1 Assistant • Calls + Chat • Basic Analytics</td><td>₹3,000</td></tr>
+                <tr><td><b>Pro</b></td><td>Multiple Assistants • Brand Voice • Advanced Analytics • RAG</td><td>₹5,000</td></tr>
+                <tr><td><b>Enterprise</b></td><td>SLAs • SSO • Custom Integrations • Dedicated Support</td><td>Custom</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials -->
+<section id="testimonials" class="section container">
+    <h2>Customer stories</h2>
+    <p class="lead">Real impact in weeks — not quarters.</p>
+    <div class="t-grid" style="margin-top:14px">
+        <div class="t-card">
+            “We capture leads after-hours now. Bookings went up 26% in one month.”
+            <div class="t-by">— Head of Growth, Real Estate</div>
+        </div>
+        <div class="t-card">
+            “The AI handles 60% of repetitive inquiries. Agents focus on high-value calls.”
+            <div class="t-by">— Ops Lead, Retail/Jewelry</div>
+        </div>
+    </div>
+</section>
+
+<!-- Contact -->
+<section id="contact" class="section container">
+    <div class="grid" style="grid-template-columns:1.1fr .9fr; gap:20px">
+        <div class="card">
+            <h2>Let’s talk</h2>
+            <p class="lead">Book a consult or start a pilot within days.</p>
+            <form class="form" onsubmit="event.preventDefault(); alert('Thanks! We will reach out shortly.');">
+                <input class="input" type="text" placeholder="Your name" required />
+                <input class="input" type="email" placeholder="Email address" required />
+                <input class="input" type="text" placeholder="Company (optional)" />
+                <textarea class="textarea" placeholder="Tell us about your use case"></textarea>
+                <button class="btn primary" type="submit">Send</button>
+            </form>
+        </div>
+        <div class="card">
+            <h3>VistaraAI</h3>
+            <p>AI voice + chat assistants, knowledge grounding, automations, analytics, and integrations — everything to run an AI-first operation.</p>
+            <div class="line"></div>
+            <p><b>Email:</b> <a href="mailto:contact@vistaraai.in">contact@vistaraai.in</a></p>
+            <p><b>Website:</b> <a href="https://vistaraai.in" target="_blank" rel="noopener">vistaraai.in</a></p>
+            <p><b>Location:</b> India • Remote-friendly</p>
+            <img src="https://placehold.co/600x360/ffffff/98a2b3?text=Your+Office+Photo+or+Team" alt="Team" style="width:100%; border-radius:12px; border:1px solid var(--border); margin-top:8px">
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <small>© 2025 VistaraAI • <a href="mailto:contact@vistaraai.in">contact@vistaraai.in</a></small>
+    </div>
+</footer>
+
+<script>
+    /* Minimal UX helpers (MotoCMS style smoothness) */
+    document.querySelectorAll('a.nav-link[href^="#"], a.btn[href^="#"]').forEach(a=>{
+        a.addEventListener('click', e=>{
+            const id = a.getAttribute('href');
+            if(!id || id==="#" || !document.querySelector(id)) return;
+            // native smooth-scroll via CSS, but prevent flash if needed
+        });
+    });
+</script>
+</body>
+</html>

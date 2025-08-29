@@ -32,14 +32,18 @@ public class RAGService {
 
   @Transactional
   public int index(String tenantId, String docType, String docId, String text, java.util.List<String> tags) {
-    RagChunk c = new RagChunk();
-    c.setTenantId(tenantId);
-    c.setDocType(docType);
-    c.setDocId(docId);
-    c.setText(text);
-    c.setTags(tags == null ? null : String.join(",", tags));
-    repo.save(c);
-    return 1;
+
+   if(!repo.existsByDocId(docId)){
+       RagChunk c = new RagChunk();
+       c.setTenantId(tenantId);
+       c.setDocType(docType);
+       c.setDocId(docId);
+       c.setText(text);
+       c.setTags(tags == null ? null : String.join(",", tags));
+       repo.save(c);
+       return 1;
+   }
+    return 0;
   }
 
   @Transactional
@@ -56,7 +60,7 @@ public class RAGService {
   }
 
   public java.util.List<java.util.Map<String, Object>> search(String tenantId, String query, int k, String docType) {
-    java.util.List<RagChunk> pool = (docType == null || docType.isBlank()) ? repo.findByTenantId(tenantId) : repo.findTop10ByTenantIdAndDocTypeOrderByIdDesc(tenantId, docType);
+    java.util.List<RagChunk> pool = (docType == null || docType.isBlank()) ? repo.findAll() : repo.findTop10ByTenantIdAndDocTypeOrderByIdDesc(tenantId, docType);
       java.util.List<RagChunkNew> poolNew = (docType == null || docType.isBlank()) ? repoNew.findByTenantId(tenantId) : repoNew.findTop10ByTenantIdAndDocTypeOrderByIdDesc(tenantId, docType);
 
     if (pool.isEmpty() && poolNew.isEmpty()) return java.util.List.of();
