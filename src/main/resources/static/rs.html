@@ -249,8 +249,9 @@
             <li onclick="showSection('documents', event)">📄 Documents</li>
             <li onclick="showSection('virtualTours', event)">🧭 Virtual Tours</li>
             <li onclick="showSection('promotions')">📢 Promotions</li>
-            <li onclick="showSection('analytics', event)">📈 Analytics</li>
-            <li onclick="showSection('chat', event)">💬 Chat</li>
+            <li onclick="showSection('analytics', event)">📈 Analytics dfgdfg</li>
+            <li onclick="showSection('chat', event)">💬 Chat1</li>
+            <li onclick="showSection('documentDetailsSection', event)">💬 Document Details</li>
         </ul>
     </aside>
 
@@ -421,7 +422,19 @@
             </section>
         </div>
 
-
+        <!-- Call Agents Section -->
+        <div id="documentDetailsSection" class="content-section">
+            <section class="card" style="display:flex;flex-direction:column;height:calc(100vh - 140px);">
+                <div class="header">AI Call Agents</div>
+                <div class="body" style="flex:1;display:flex;padding:0;overflow:hidden;">
+                    <iframe
+                            id="documentDetailsFrame"
+                            src="document-details.html"
+                            style="width:100%;height:100%;border:0;border-radius:0 0 var(--radius) var(--radius);">
+                    </iframe>
+                </div>
+            </section>
+        </div>
 
 
 
@@ -552,7 +565,7 @@
                 </section>
 
                 <!-- Document Management -->
-                <section hidden="hidden" class="card">
+                <section class="card">
                     <div class="header">Document Management</div>
                     <div class="body">
                         <div style="display:flex; gap:10px; margin-bottom:12px;">
@@ -1134,6 +1147,13 @@
             iframe.src = '/promotions.html';
         }
     }
+    function loadDocumentDetails(){
+        const iframe = document.getElementById('promotionsFrame');
+        if (iframe && !iframe.src) {
+            // absolute path so it works regardless of current route
+            iframe.src = '/document-details.html';
+        }
+    }
     function loadChat() {
         const iframe = document.getElementById('chatFrame');
         if (iframe && !iframe.src) {
@@ -1159,6 +1179,7 @@
         else if (sectionName === 'callAgents')  loadCallAgents();
         else if (sectionName === 'promotions')  loadPromotions();
         else if (sectionName === 'chat')  loadChat();
+        else if (sectionName === 'documentDetailsSection')  loadDocumentDetails();
     }
 
     /* ---------- Inventory ---------- */
