@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Document Assistant — Matrix + Detail Hybrid</title>
+    <style>
+        :root{
+            --bg:#f5f7fb; --panel:#ffffff; --muted:#8a9099; --text:#0f172a; --pri:#2563eb; --pri-2:#0ea5e9; --green:#059669; --border:#e5e7eb; --chip:#f1f5ff; --shadow:0 8px 24px rgba(2,6,23,.08);
+            --radius:18px;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%}
+        body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+
+        /* Layout */
+        header{position:sticky;top:0;background:linear-gradient(180deg,#fff,rgba(255,255,255,.9));backdrop-filter:saturate(120%) blur(8px);z-index:10;border-bottom:1px solid var(--border)}
+        .wrap{max-width:1200px;margin:0 auto;padding:16px}
+
+        .toolbar{display:flex;gap:12px;align-items:center;justify-content:space-between}
+        .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+        .brand svg{width:28px;height:28px}
+
+        .controls{display:flex;gap:10px;align-items:center}
+        .btn{border:1px solid var(--border);background:#fff;border-radius:12px;padding:10px 14px;font-weight:600;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.03)}
+        .btn:hover{border-color:#d7dce3}
+        .btn.pri{border-color:transparent;background:linear-gradient(135deg,var(--pri),var(--pri-2));color:#fff}
+
+        .grid{display:grid;grid-template-columns: 1.25fr 1fr;gap:16px;align-items:start;margin-top:16px}
+
+        /* Dropzone */
+        .drop{position:relative;border:2px dashed #cbd5e1;border-radius:var(--radius);padding:16px;background:#f8fafc}
+        .drop.dragover{border-color:var(--pri)}
+        .drop input{position:absolute;inset:0;opacity:0;cursor:pointer}
+        .drop .hint{display:flex;gap:10px;align-items:center;color:#475569}
+
+        /* Table */
+        .card{background:var(--panel);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border)}
+        .card h3{margin:0;padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+        .table-wrap{max-height:560px;overflow:auto}
+        table{width:100%;border-collapse:separate;border-spacing:0}
+        thead th{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--border);text-align:left;padding:12px;font-size:13px;color:#334155;letter-spacing:.2px;cursor:pointer}
+        tbody td{padding:12px;border-bottom:1px solid #f0f2f5;font-size:14px}
+        tbody tr{cursor:pointer}
+        tbody tr:hover{background:#f8fafc}
+        .chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--chip);border:1px solid #e6ecff;font-weight:600;font-size:12px}
+        .pill{display:inline-block;background:#eef2ff;border:1px solid #dbe3ff;color:#1e40af;padding:2px 8px;border-radius:999px;font-size:12px}
+
+        /* Detail panel */
+        .panel{padding:16px}
+        .section{border:1px solid var(--border);background:#fff;border-radius:14px;padding:14px}
+        .row{display:flex;gap:10px;flex-wrap:wrap}
+        .kvs{display:grid;grid-template-columns:120px 1fr;gap:8px}
+        .kvs div{padding:6px 0;border-bottom:1px dashed #eef1f5}
+
+        .quick{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+        .quick .q{border:1px dashed #cfd8ea;background:#f8fbff;padding:8px 10px;border-radius:10px;font-size:12px;cursor:pointer}
+
+        .timeline{display:flex;align-items:center;gap:10px;margin-top:8px}
+        .dot{width:12px;height:12px;border-radius:999px;background:#1f2937}
+        .line{height:2px;background:#cbd5e1;flex:1}
+
+        /* Chat drawer */
+        .drawer{position:fixed;right:0;top:0;height:100%;width:440px;background:#fff;border-left:1px solid var(--border);box-shadow: -8px 0 24px rgba(2,6,23,.1);transform:translateX(100%);transition:transform .25s ease;border-top-left-radius:16px;border-bottom-left-radius:16px;display:flex;flex-direction:column}
+        .drawer.open{transform:translateX(0)}
+        .drawer header{padding:14px;border-bottom:1px solid var(--border)}
+        .drawer .body{flex:1;overflow:auto;padding:12px}
+        .msg{background:#f8fafc;border:1px solid #edf2f7;padding:10px 12px;border-radius:12px;margin:8px 0;font-size:14px}
+        .msg.you{background:#eef2ff;border-color:#dbe3ff}
+        .composer{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
+        .composer textarea{flex:1;resize:none;border:1px solid var(--border);border-radius:12px;padding:8px;height:70px}
+
+        /* Toast */
+        .toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 14px;border-radius:12px;box-shadow:var(--shadow);opacity:0;pointer-events:none}
+        .toast.show{opacity:1}
+
+        /* Utilities */
+        .muted{color:#6b7280}
+        .right{margin-left:auto}
+        .spaced{display:flex;gap:8px;align-items:center}
+        .search{border:1px solid var(--border);border-radius:12px;padding:8px 12px;background:#fff}
+        .hide{display:none}
+        @media (max-width: 980px){.grid{grid-template-columns:1fr}.drawer{width:100%}}
+    </style>
+</head>
+<body>
+<header>
+    <div class="wrap toolbar">
+        <div class="brand" title="AI Doc Assistant">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h9l5 5v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M14 4v5h5"/></svg>
+            <span>AI Document Assistant</span>
+            <span class="pill">Matrix + Detail</span>
+        </div>
+        <div class="controls">
+            <input id="search" class="search" placeholder="Search title, party, category…" />
+            <button class="btn" id="exportCsv">Export CSV</button>
+            <button class="btn pri" id="openChat" disabled>Talk to Document</button>
+        </div>
+    </div>
+</header>
+
+<div class="wrap" style="margin-top:12px">
+    <div class="drop" id="drop">
+        <input id="fileInput" type="file" multiple />
+        <div class="hint"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <b>Drag & drop</b> documents here, or click to upload. <span class="muted">PDF, DOCX, XLSX, Images…</span>
+        </div>
+    </div>
+
+    <div class="grid" style="margin-top:16px">
+        <!-- Matrix (left) -->
+        <div class="card" id="matrix">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg>
+                <span>Documents uploaded</span>
+                <span class="right muted" id="count"></span>
+            </h3>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th data-k="title">Document</th>
+                        <th data-k="category">Category</th>
+                        <th data-k="parties">Signatories</th>
+                        <th data-k="date">Date</th>
+                        <th data-k="amount">Amount</th>
+                    </tr>
+                    </thead>
+                    <tbody id="rows"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Detail (right) -->
+        <div class="card panel" id="detail">
+            <div class="muted">Select a document to see insights.</div>
+        </div>
+    </div>
+</div>
+
+<!-- Chat Drawer -->
+<aside class="drawer" id="drawer">
+    <header class="spaced">
+        <strong>Talk to Document</strong>
+        <button class="btn right" id="closeDrawer">Close</button>
+    </header>
+    <div class="body" id="chat"></div>
+    <div class="composer">
+        <textarea id="prompt" placeholder="Ask about this document… e.g., ‘Summarize risks’"></textarea>
+        <button class="btn pri" id="send">Send</button>
+    </div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+    /********************** CONFIG ************************/
+    const USE_MOCK = true; // Set to false to call your backend endpoints
+    const API = {
+        list: '/api/docs',                                 // GET
+        upload: '/api/docs/upload',                        // POST multipart
+        insights: id => `/api/docs/${id}/insights`,        // GET
+        chat: id => `/api/docs/${id}/chat`                 // POST {message}
+    };
+
+    /********************** STATE *************************/
+    let docs = [];              // matrix list
+    let selected = null;        // selected document
+    let sortKey = 'date';
+    let sortDir = 'desc';
+
+    /********************** MOCK DATA *********************/
+    const MOCK_DOCS = [
+        {id:'d1', title:'Business Proposal', category:'Marketing', parties:['Acme Corp','Client'], date:'2024-06-05', amount:null, url:'#'},
+        {id:'d2', title:'Consulting Agreement', category:'Legal → Contracts', parties:['Acme Corp','Client'], date:'2025-09-30', amount: '₹12,50,000', url:'#'},
+        {id:'d3', title:'Sales Contract', category:'Legal → Company', parties:['Acme Corp','Company'], date:'2024-03-15', amount: '₹8,20,000', url:'#'}
+    ];
+    const MOCK_INSIGHTS = {
+        d2: {
+            title:'Consulting Agreement',
+            fileType:'pdf',
+            category:['Legal','Contracts'],
+            parties:['Acme Corp','Client'],
+            summary:'This contract outlines terms for providing consulting services between the parties.',
+            keyDates:[{label:'Effective', date:'2025-09-30'}],
+            actions:[{id:'a1', text:'Review termination clause', done:false}],
+            entities:[{type:'money', value:'₹12,50,000'},{type:'email', value:'legal@acme.com'}],
+            url:'#'
+        },
+        d1: {
+            title:'Business Proposal',
+            fileType:'docx',
+            category:['Marketing'],
+            parties:['Acme Corp','Client'],
+            summary:'Proposal describing campaign scope, deliverables, and ROI model.',
+            keyDates:[{label:'Presentation', date:'2024-06-12'}],
+            actions:[{id:'a2', text:'Confirm budget sign-off', done:false}],
+            entities:[{type:'metric', value:'CTR 3.2%'}],
+            url:'#'
+        },
+        d3: {
+            title:'Sales Contract',
+            fileType:'pdf',
+            category:['Legal','Company'],
+            parties:['Acme Corp','Company'],
+            summary:'Master sales agreement with pricing tiers and discount schedule.',
+            keyDates:[{label:'Renewal', date:'2025-03-15'}],
+            actions:[{id:'a3', text:'Verify discount clause', done:true}],
+            entities:[{type:'money', value:'₹8,20,000'}],
+            url:'#'
+        }
+    };
+
+    /********************** UTIL **************************/
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => [...document.querySelectorAll(sel)];
+    const fmtDate = d => d ? new Date(d).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}) : '—';
+    const toast = (msg) => { const t=$('#toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); };
+
+    function csvEscape(v){ if(v==null) return ''; v = Array.isArray(v)? v.join('; '): String(v); return '"'+v.replace(/"/g,'""')+'"'; }
+
+    // --- History safety helpers (fix for about:srcdoc sandbox) ---
+    function canUseHistoryForUrl(href){
+        try{
+            if(!href) return false;
+            const h = String(href);
+            // Disallow in sandboxed srcdoc/about contexts
+            if(h.startsWith('about:') || h.includes('about:srcdoc')) return false;
+            if(!('history' in window) || typeof history.replaceState !== 'function') return false;
+            return true;
+        }catch{ return false; }
+    }
+    function canTouchHistory(){ return canUseHistoryForUrl(location.href); }
+
+    /********************** API ***************************/
+    async function apiList(){
+        if(USE_MOCK) return JSON.parse(JSON.stringify(MOCK_DOCS));
+        const r = await fetch(API.list); if(!r.ok) throw new Error('List failed'); return r.json();
+    }
+    async function apiInsights(id){
+        if(USE_MOCK) return JSON.parse(JSON.stringify(MOCK_INSIGHTS[id]));
+        const r = await fetch(API.insights(id)); if(!r.ok) throw new Error('Insights failed'); return r.json();
+    }
+    async function apiUpload(files){
+        if(USE_MOCK){
+            // Fake add docs
+            const added = [...files].map((f,i)=>({
+                id: 'u'+Date.now()+i,
+                title: f.name,
+                category: 'Uncategorized',
+                parties: [],
+                date: new Date().toISOString().slice(0,10),
+                amount: null,
+                url: '#'
+            }));
+            docs = [...added, ...docs];
+            renderRows();
+            toast(`Uploaded ${files.length} file(s)`);
+            return;
+        }
+        const fd = new FormData(); [...files].forEach(f=>fd.append('files',f));
+        const r = await fetch(API.upload,{method:'POST',body:fd});
+        if(!r.ok) throw new Error('Upload failed');
+        await load();
+    }
+    async function apiChat(id, message){
+        if(USE_MOCK){
+            return {reply: '• Main risk: broad termination clause.\n• Payment due 30 days.\n• Consider adding renewal cap.'};
+        }
+        const r = await fetch(API.chat(id), {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message})});
+        if(!r.ok) throw new Error('Chat failed');
+        return r.json();
+    }
+
+    /********************** RENDER TABLE ******************/
+    function renderRows(){
+        const term = $('#search').value?.toLowerCase()?.trim() || '';
+        let data = [...docs];
+        if(term){
+            data = data.filter(d => [d.title,d.category,(d.parties||[]).join(' ')].join(' ').toLowerCase().includes(term));
+        }
+        data.sort((a,b)=>{
+            const va = (a[sortKey]||''); const vb = (b[sortKey]||'');
+            if(sortKey==='date') return (sortDir==='asc'?1:-1) * (new Date(va)-new Date(vb));
+            return (sortDir==='asc'?1:-1) * String(va).localeCompare(String(vb));
+        });
+
+        $('#count').textContent = `${data.length} item${data.length!==1?'s':''}`;
+
+        const tbody = $('#rows'); tbody.innerHTML='';
+        for(const d of data){
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+        <td><div class="spaced"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 4h8l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="M14 4v4h4"/></svg>${d.title}</div></td>
+        <td>${d.category||'—'}</td>
+        <td>${(d.parties&&d.parties.length)? d.parties.join(', ') : '—'}</td>
+        <td>${fmtDate(d.date)}</td>
+        <td>${d.amount||'—'}</td>`;
+            tr.addEventListener('click',()=>selectDoc(d));
+            tbody.appendChild(tr);
+        }
+    }
+
+    /********************** RENDER DETAIL *****************/
+    async function selectDoc(d){
+        selected = d; $('#openChat').disabled=false;
+        $('#detail').innerHTML = `<div class="muted">Loading insights…</div>`;
+        try{
+            const ins = await apiInsights(d.id);
+            renderDetail(ins);
+            // deep link — safe only when not running in about:srcdoc
+            if(canTouchHistory()){
+                try{
+                    const u = new URL(location.href);
+                    u.hash = `doc=${encodeURIComponent(d.id)}`;
+                    history.replaceState(null,'',u);
+                }catch{/* ignore */}
+            }else{
+                // fallback for sandbox: remember the last selected id without touching history
+                try{ sessionStorage.setItem('lastDocId', d.id); }catch{}
+            }
+        }catch(e){ $('#detail').innerHTML = `<div class='muted'>Failed to load insights.</div>`; console.error(e); }
+    }
+
+    function renderDetail(ins){
+        const cats = (ins.category||[]).join(' → ');
+        const parties = (ins.parties||[]).join(', ');
+        const keyDates = (ins.keyDates||[]).map(k=>`<div class="spaced"><span class="pill">${k.label}</span> <span class="right muted">${fmtDate(k.date)}</span></div>`).join('') || '<span class="muted">No key dates.</span>';
+        const actions = (ins.actions||[]).map(a=>`<div class="spaced"><label class="spaced"><input type="checkbox" ${a.done?'checked':''}/> ${a.text}</label></div>`).join('') || '<span class="muted">No action items.</span>';
+        const ents = (ins.entities||[]).map(e=>`<span class="chip">${e.type}: ${e.value}</span>`).join(' ');
+
+        $('#detail').innerHTML = `
+      <h2 style="margin:4px 0 10px 0">${ins.title||selected.title}</h2>
+      <div class="row" style="margin-bottom:10px">
+        <span class="chip">${cats||'Uncategorized'}</span>
+        ${ents}
+        <a href="${ins.url||selected.url||'#'}" class="btn right" target="_blank">Open</a>
+      </div>
+
+      <div class="section" style="margin-bottom:12px">
+        <strong>Summary</strong>
+        <div class="muted" style="margin-top:6px">${ins.summary||'No summary extracted.'}</div>
+        <div class="quick">
+          <span class="q" data-q="Summarize in 3 bullets">Summarize in 3 bullets</span>
+          <span class="q" data-q="What are the risks?">What are the risks?</span>
+          <span class="q" data-q="Extract payment terms">Extract payment terms</span>
+        </div>
+      </div>
+
+      <div class="row" style="gap:12px">
+        <div class="section" style="flex:1;min-width:240px">
+          <strong>Key Dates</strong>
+          <div style="margin-top:6px">${keyDates}</div>
+          ${(ins.keyDates&&ins.keyDates.length>1)?`<div class="timeline" title="Quick timeline">
+              <div class="dot"></div><div class="line"></div><div class="dot"></div><div class="line"></div><div class="dot"></div>
+            </div>`:''}
+        </div>
+        <div class="section" style="flex:1;min-width:240px">
+          <strong>Action Items</strong>
+          <div style="margin-top:6px">${actions}</div>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top:12px">
+        <strong>Entities</strong>
+        <div class="row" style="margin-top:6px">${ents || '<span class=muted>No entities extracted.</span>'}</div>
+        <div class="kvs" style="margin-top:12px">
+          <div class="muted">Parties</div><div>${parties||'—'}</div>
+          <div class="muted">Type</div><div>${cats||'—'}</div>
+        </div>
+      </div>
+    `;
+
+        // quick prompt chips
+        $$('#detail .q').forEach(el=> el.addEventListener('click',()=>openChat(el.dataset.q)) );
+    }
+
+    /********************** CHAT **************************/
+    function openChat(seed){
+        if(!selected) return toast('Select a document first');
+        $('#drawer').classList.add('open');
+        $('#chat').innerHTML = '';
+        if(seed){ $('#prompt').value = seed; }
+        $('#prompt').focus();
+    }
+    $('#openChat').addEventListener('click',()=>openChat());
+    $('#closeDrawer').addEventListener('click',()=> $('#drawer').classList.remove('open'));
+
+    async function send(){
+        const msg = $('#prompt').value.trim(); if(!msg) return;
+        const c = $('#chat');
+        c.insertAdjacentHTML('beforeend', `<div class="msg you">${msg}</div>`);
+        $('#prompt').value='';
+        const res = await apiChat(selected.id, msg).catch(e=>({reply:'(error) '+e.message}));
+        c.insertAdjacentHTML('beforeend', `<div class="msg">${(res.reply||'No reply')}</div>`);
+        c.scrollTop = c.scrollHeight;
+    }
+    $('#send').addEventListener('click', send);
+    $('#prompt').addEventListener('keydown', e=>{ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }});
+
+    /********************** UPLOAD ************************/
+    const dz = $('#drop');
+    dz.addEventListener('dragover', e=>{e.preventDefault(); dz.classList.add('dragover');});
+    dz.addEventListener('dragleave', ()=>dz.classList.remove('dragover'));
+    dz.addEventListener('drop', e=>{e.preventDefault(); dz.classList.remove('dragover'); if(e.dataTransfer.files?.length) apiUpload(e.dataTransfer.files);});
+    $('#fileInput').addEventListener('change', e=>{ if(e.target.files?.length) apiUpload(e.target.files); });
+
+    /********************** EXPORT ************************/
+    $('#exportCsv').addEventListener('click', ()=>{
+        const headers = ['Document','Category','Signatories','Date','Amount'];
+        const rows = docs.map(d=> [d.title,d.category,(d.parties||[]).join('; '),fmtDate(d.date),d.amount||''].map(csvEscape).join(','));
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csv],{type:'text/csv'});
+        const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='documents.csv'; a.click(); URL.revokeObjectURL(a.href);
+    });
+
+    /********************** LOAD **************************/
+    async function load(){
+        try{ docs = await apiList(); renderRows();
+            // Prefer hash. In sandbox where we can't set hash, fall back to sessionStorage
+            const params = new URLSearchParams(location.hash.replace('#',''));
+            let hid = params.get('doc');
+            if(!hid){ try{ hid = sessionStorage.getItem('lastDocId'); }catch{}
+            }
+            if(hid){ const found = docs.find(d=>d.id===hid); if(found) selectDoc(found); }
+        }catch(e){ console.error(e); toast('Failed to load documents'); }
+    }
+
+    // sort handlers
+    $$('th[data-k]').forEach(th=> th.addEventListener('click',()=>{
+        const k = th.dataset.k; if(sortKey===k) sortDir = (sortDir==='asc')?'desc':'asc'; else {sortKey=k; sortDir='asc'}; renderRows();
+    }));
+    $('#search').addEventListener('input', renderRows);
+
+    // init
+    (function init(){ if(USE_MOCK){docs = MOCK_DOCS; renderRows();} else {load();} })();
+
+    /********************** SELF-TESTS ********************/
+    // Basic tests to ensure history safety helper behaves as expected
+    console.assert(canUseHistoryForUrl('about:srcdoc') === false, 'canUseHistoryForUrl should be false for about:srcdoc');
+    console.assert(canUseHistoryForUrl('about:blank') === false, 'canUseHistoryForUrl should be false for about:blank');
+    console.assert(canUseHistoryForUrl('https://example.com') === true, 'canUseHistoryForUrl should be true for normal https URL');
+
+    /********************** BACKEND SCHEMA (for you) ******/
+    /*
+    // 1) GET /api/docs → [{ id,title,category,parties[],date,amount,url }]
+    // 2) GET /api/docs/:id/insights → {
+    //      title, fileType, category[], parties[], summary,
+    //      keyDates:[{label,date}], actions:[{id,text,done}],
+    //      entities:[{type,value}], url
+    //    }
+    // 3) POST /api/docs/upload (multipart: files[])
+    // 4) POST /api/docs/:id/chat { message } → { reply }
+    */
+</script>
+</body>
+</html>
