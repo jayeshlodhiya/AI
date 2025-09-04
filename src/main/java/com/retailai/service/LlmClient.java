@@ -1,6 +1,10 @@
 
 package com.retailai.service;
 
+import com.retailai.api.dto.AnswerResponse;
+import com.retailai.api.dto.QueryRequest;
+import com.retailai.service.rag.RagApiClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -45,8 +49,13 @@ public class LlmClient {
 
   @Value("${app.llm.read-timeout:60000}")
   private int readTimeout;
+    @Value("${app.seed.enabled:true}")
+  private boolean externalRag;
 
   private final RestTemplate http;
+  private final String SYSTEM_PROMPT = "Check if any followup is mentioned in response if yes then append #YES in the response otherwise add #NO ";
+    @Autowired
+    RagApiClient ragApiClient;
 
   public LlmClient() {
     // Initialize with default timeouts, will be updated by @Value injection
@@ -62,7 +71,12 @@ public class LlmClient {
     SimpleClientHttpRequestFactory factory = (SimpleClientHttpRequestFactory) http.getRequestFactory();
     factory.setConnectTimeout(connectTimeout);
     factory.setReadTimeout(readTimeout);
-    
+    if(externalRag) {
+        String resp =  callExternalRAGSystem(systemPrompt , userPrompt);
+        System.out.println("Response from rag llm external"+resp);
+        return resp;
+    }
+
     if ("ollama".equalsIgnoreCase(provider)) {
       return callOllama(systemPrompt, userPrompt);
     }
@@ -70,7 +84,13 @@ public class LlmClient {
     return callOpenAIStyle(systemPrompt, userPrompt);
   }
 
-  // ---------------- Ollama ----------------
+    private String callExternalRAGSystem(String systemPrompt, String userPrompt) {
+        QueryRequest queryRequest = new QueryRequest(userPrompt,50,null,true,true);
+        AnswerResponse  answerResponse = ragApiClient.ask(queryRequest);
+        return answerResponse.answer();
+    }
+
+    // ---------------- Ollama ----------------
 
   @SuppressWarnings("rawtypes")
   private String callOllama(String systemPrompt, String userPrompt) {

@@ -149,6 +149,11 @@ public class TranscriptParser {
         }
         return s;
     }
+    public static String replaceWord(String paragraph, String target, String replacement) {
+        // "\\b" marks the word boundary, so only whole words are matched (case sensitive)
+        return paragraph.replaceAll("\\b" + java.util.regex.Pattern.quote(target) + "\\b", replacement);
+    }
+
 
     // --- Quick test ---
     public static void main(String[] args) {
