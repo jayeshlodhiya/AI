@@ -30,13 +30,15 @@
         a { color: inherit; text-decoration: none; }
         .app {
             display: grid;
-            grid-template-columns: 260px 1fr 360px;
+            grid-template-columns: 260px 1fr;   /* no third column */
             grid-template-rows: 64px 1fr;
             grid-template-areas:
-        "sidebar topbar right"
-        "sidebar main   right";
-            height: 100vh; overflow: hidden;
+        "sidebar topbar"
+        "sidebar main";
+            height: 100vh;
+            overflow: hidden;
         }
+
         /* Sidebar */
         .sidebar { grid-area: sidebar; background: var(--panel); padding: 18px; border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 2; }
         .brand { font-weight: 800; letter-spacing:.2px; margin: 4px 0 18px; }
@@ -52,7 +54,12 @@
         .chip { background: var(--chip); color:#3730a3; padding:6px 10px; border-radius: 999px; font-size: 12px; font-weight:600; }
 
         /* Main */
-        .main { grid-area: main; overflow: auto; padding: 18px; }
+        .main {
+            grid-area: main;
+            overflow: auto;
+            padding: 18px;
+            height: 100%;
+        }
         .grid { display:grid; grid-template-columns: 2fr 1fr; gap: 18px; }
         .card { background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
         .card .header { padding: 14px 16px; border-bottom:1px solid var(--border); font-weight:700; }
@@ -230,6 +237,19 @@
         #chatSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
         #chatFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
 
+
+
+
+        #documentDetailsSection { height: 100%; }
+        #documentDetailsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+        #documentDetailsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+        #documentDetailsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+        #micBtn.listening { background:#fee2e2; color:#b91c1c; }
+
+        #imagePromotionsSection { height: 100%; }
+        #imagePromotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+        #imagePromotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+        #imagePromotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
     </style>
 </head>
 <body>
@@ -249,9 +269,10 @@
             <li onclick="showSection('documents', event)">📄 Documents</li>
             <li onclick="showSection('virtualTours', event)">🧭 Virtual Tours</li>
             <li onclick="showSection('promotions')">📢 Promotions</li>
-            <li onclick="showSection('analytics', event)">📈 Analytics dfgdfg</li>
-            <li onclick="showSection('chat', event)">💬 Chat1</li>
-            <li onclick="showSection('documentDetailsSection', event)">💬 Document Details</li>
+            <li onclick="showSection('imagePromotions')">📢 Promotions Image</li>
+            <li onclick="showSection('analytics', event)">📈 Analytics</li>
+            <li onclick="showSection('chat', event)">💬 Chat</li>
+            <li onclick="showSection('documentDetails', event)">📄 Document Details</li>
         </ul>
     </aside>
 
@@ -654,7 +675,15 @@
                 </div>
             </section>
         </div>
-
+        <div id="imagePromotionsSection" class="content-section">
+            <section class="card" id="imagePromotionsCard">
+                <div class="header">Promotions</div>
+                <div class="body">
+                    <iframe id="imagePromotionsFrame" src="/promotion-image.html" title="Promotions"
+                            style="width:100%;height:100%;border:0;border-radius:0 0 var(--radius) var(--radius);background:#fff;"></iframe>
+                </div>
+            </section>
+        </div>
 
         <!-- Analytics Section -->
         <div id="analyticsSection" class="content-section">
@@ -729,27 +758,7 @@
     </main>
 
     <!-- Right Panel: AI Assistant -->
-    <aside class="right">
-        <section class="assistant">
-            <div class="header" style="padding:14px 16px; border-bottom:1px solid var(--border); font-weight: 800;">AI Assistant
-                <select id="voiceLang" title="Language" style="border:1px solid var(--border); border-radius:10px; padding:8px;">
-                    <option value="hi-IN">Hindi (hi-IN)</option>
-                    <option value="en-US">English (en-US)</option>
-                </select>
-            </div>
-            <div class="chat" id="chat">
-                <div class="msg ai">Hello! Ask me anything from your uploaded documents.</div>
-            </div>
-            <div class="composer">
 
-                <input id="chatInput" placeholder="Ask AI… e.g., 2BHK in Wakad under 80L or ?payment schedule" />
-                <label class="toggle" hidden="hidden"><input type="checkbox" hidden="hidden" checked="checked" id="searchModeToggle"></label>
-
-                <button class="btn" id="micBtn" title="Speak" onclick="toggleVoice()" style="min-width:44px;">🎙️</button>
-                <button class="btn primary" onclick="sendChat()">Send</button>
-            </div>
-        </section>
-    </aside>
 </div>
 
 <!-- Schedule Visit Modal -->
@@ -1027,9 +1036,9 @@
         const text = (input.value || '').trim();
         appendMsg('user', text);
         //if(!text) return;
-      //  const reply = aiReply(text);
-       // appendMsg('ai', reply);
-       // speak(reply, getLang());
+        //  const reply = aiReply(text);
+        // appendMsg('ai', reply);
+        // speak(reply, getLang());
         input.value='';
         const thinking = showThinking('Looking up');
         const searchToggle = document.getElementById('searchModeToggle');
@@ -1046,20 +1055,20 @@
                     window.currentDocId || '',
                     10
                 );
-             //   console.log("Data : "+JSON.stringify(data));
-               // alert("Data : "+data.toString());
+                //   console.log("Data : "+JSON.stringify(data));
+                // alert("Data : "+data.toString());
                 const html = renderRagResults(data, text);
                 resolveThinking(thinking, html);
-               // appendMsg('ai', html, true);
+                // appendMsg('ai', html, true);
             } catch (e) {
-              //  appendMsg('ai', `Search error: ${e.message}`);
+                //  appendMsg('ai', `Search error: ${e.message}`);
                 removeThinking(thinking, `Error: ${err.message || 'failed to fetch'}`);
             }
             return;
         }
 
         // Fallback to demo property chat
-       // setTimeout(()=> appendMsg('ai', aiReply(text)), 250);
+        // setTimeout(()=> appendMsg('ai', aiReply(text)), 250);
     }
 
     function aiReply(q) {
@@ -1139,16 +1148,26 @@
     showSection = function(sectionName) {
         _showSectionOrig(sectionName);
         if (sectionName === 'callAgents') loadCallAgents();
+        if(sectionName==='documentDetails') loadDocumentDetails();
     };
     function loadPromotions() {
+
         const iframe = document.getElementById('promotionsFrame');
         if (iframe && !iframe.src) {
             // absolute path so it works regardless of current route
             iframe.src = '/promotions.html';
         }
     }
+    function  loadImagePromotions(){
+        const iframe = document.getElementById('imagePromotionsFrame');
+        if (iframe && !iframe.src) {
+            // absolute path so it works regardless of current route
+            iframe.src = '/promotions.html';
+        }
+    }
     function loadDocumentDetails(){
-        const iframe = document.getElementById('promotionsFrame');
+       // alert("Documet");
+        const iframe = document.getElementById('documentDetailsFrame');
         if (iframe && !iframe.src) {
             // absolute path so it works regardless of current route
             iframe.src = '/document-details.html';
@@ -1178,8 +1197,9 @@
         else if (sectionName === 'documents')   loadDocuments();
         else if (sectionName === 'callAgents')  loadCallAgents();
         else if (sectionName === 'promotions')  loadPromotions();
+        else if (sectionName === 'imagePromotions')  loadImagePromotions();
         else if (sectionName === 'chat')  loadChat();
-        else if (sectionName === 'documentDetailsSection')  loadDocumentDetails();
+        else if (sectionName === 'documentDetails')  loadDocumentDetails();
     }
 
     /* ---------- Inventory ---------- */
@@ -1590,9 +1610,9 @@
             updateProgress(`Uploading ${f.name}…`, (i/selectedFiles.length)*100);
             try{
                 if(f.type==="image/jpg"){
-                     result = await processAndUploadFileImg(f, docType);
+                    result = await processAndUploadFileImg(f, docType);
                 }else{
-                     result = await processAndUploadFile(f, docType);
+                    result = await processAndUploadFile(f, docType);
                 }
 
                 done++; totalChunks += result.chunks || 0;
@@ -1609,7 +1629,7 @@
             loadDocuments(); // refresh list & stats
             appendMsg('ai', `✅ Processed ${done} document(s), created ${totalChunks} RAG chunk(s).`);
             appendMsg('ai',`Checking for actionable points...`);
-                fetchActionItems('12'); // <-- triggers extraction and shows sticky notes
+            fetchActionItems('12'); // <-- triggers extraction and shows sticky notes
 
         }, 800);
     }

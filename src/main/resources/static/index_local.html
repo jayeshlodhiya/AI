@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Retail Assistant – Dashboard</title>
+
+  <!-- Tailwind & Chart.js (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    html, body { height: 100%; font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Ubuntu; }
+    .glass { backdrop-filter: blur(12px); background: rgba(255,255,255,0.75); }
+    .card { border-radius: 18px; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 10px 30px rgba(2, 6, 23, 0.06); }
+    .btn { padding: 8px 12px; border-radius: 12px; font-size: 14px; font-weight: 500; transition: all .2s; }
+    .btn-primary { background: linear-gradient(135deg,#6366f1,#22c55e); color: #fff; }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-outline { border: 1px solid #e2e8f0; }
+    .input { border-radius: 12px; padding: 8px 12px; border: 1px solid #e2e8f0; background: #fff; outline: none; }
+    .badge { font-size: 11px; padding: 2px 8px; border-radius: 999px; }
+    .heading { color: #0f172a; }
+    .muted { color: #64748b; }
+    .rainbow { background: linear-gradient(120deg, #22c55e 0%, #06b6d4 22%, #6366f1 45%, #a855f7 67%, #f59e0b 100%); }
+    #arOverlay {
+      transform-origin: 50% 100%;
+    }
+    #arOverlay.show {
+      opacity: 1;
+      transform: translate(-50%, -110%) scale(1);
+    }
+
+  </style>
+
+  <script>
+    /* ====== CONFIG: set the API base if your backend runs elsewhere ======
+       Same origin (default): leave API_BASE empty
+       Different host/port   : set window.API_BASE = "http://localhost:8080"
+    */
+    window.API_BASE = window.API_BASE || "";
+  </script>
+</head>
+<body class="text-slate-800">
+<!-- Gradient header -->
+<div class="relative overflow-hidden">
+  <div class="absolute inset-0 rainbow opacity-30"></div>
+  <header class="relative z-10 max-w-7xl mx-auto px-4 py-5 flex items-center gap-3">
+    <div class="flex items-center gap-3">
+      <div class="h-10 w-10 rounded-2xl bg-gradient-to-br from-indigo-500 via-fuchsia-500 to-emerald-500 shadow-lg grid place-items-center text-white font-bold">AI</div>
+      <div>
+        <div class="text-lg font-semibold">AI Retail Assistant</div>
+        <div class="text-xs text-slate-600">Colorful Dashboard</div>
+      </div>
+      <span class="badge bg-amber-100 text-amber-700 ml-2">LIVE</span>
+    </div>
+    <div class="ml-auto flex items-center gap-2">
+      <input id="globalSearch" class="input w-64" placeholder="Search (coming soon)" />
+      <a href="/swagger-ui.html" class="btn btn-outline">Swagger</a>
+    </div>
+  </header>
+</div>
+
+<main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
+  <!-- Left column -->
+  <section class="xl:col-span-8 space-y-6">
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="card glass p-4 bg-white/80">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-indigo-100 text-indigo-700 grid place-items-center">📦</div>
+          <div class="text-xs muted">Low-Stock SKUs</div>
+        </div>
+        <div id="kpiLowStock" class="text-3xl font-extrabold mt-1 tracking-tight">–</div>
+      </div>
+      <div class="card glass p-4 bg-white/80">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-emerald-100 text-emerald-700 grid place-items-center">₹</div>
+          <div class="text-xs muted">Sales (demo)</div>
+        </div>
+        <div class="text-3xl font-extrabold mt-1">₹ 4.8L</div>
+      </div>
+      <div class="card glass p-4 bg-white/80">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-fuchsia-100 text-fuchsia-700 grid place-items-center">⭐</div>
+          <div class="text-xs muted">VIP Customers (demo)</div>
+        </div>
+        <div class="text-3xl font-extrabold mt-1">86</div>
+      </div>
+      <div class="card glass p-4 bg-white/80">
+        <div class="flex items-center gap-3">
+          <div class="h-9 w-9 rounded-xl bg-amber-100 text-amber-700 grid place-items-center">⚙︎</div>
+          <div class="text-xs muted">Automations (demo)</div>
+        </div>
+        <div class="text-3xl font-extrabold mt-1">2</div>
+      </div>
+    </div>
+
+    <!-- Charts + Low stock -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="card p-4 bg-white">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-semibold heading">Sales Trend</div>
+            <div class="text-xs muted mt-0.5">Last 30 days (demo)</div>
+          </div>
+          <div class="badge bg-indigo-100 text-indigo-700">Live</div>
+        </div>
+        <canvas id="salesChart" class="mt-4 h-56"></canvas>
+      </div>
+
+      <div class="card p-0 overflow-hidden bg-white">
+        <div class="p-4">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-semibold heading">Low Stock & Reorder</div>
+              <div class="text-xs muted mt-0.5">AI-generated reorder suggestions</div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="refreshLowStock" onclick="loadLowStock()" class="px-3 py-1.5 rounded-lg bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 transition-colors flex items-center gap-1">
+                🔄 Refresh
+              </button>
+              <button id="exportLowStock" onclick="exportLowStockData()" class="px-3 py-1.5 rounded-lg bg-blue-100 text-blue-600 text-xs hover:bg-blue-200 transition-colors flex items-center gap-1">
+                📊 Export
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="border-t border-slate-200">
+          <table class="w-full">
+            <thead class="bg-slate-50">
+            <tr class="text-left text-xs text-slate-500">
+              <th class="px-3 py-2">SKU</th>
+              <th>Variant</th>
+              <th>Current Stock</th>
+              <th>Reorder Level</th>
+              <th>Suggested Qty</th>
+              <th>Location</th>
+              <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody id="lowStockBody">
+              <tr>
+                <td colspan="7" class="px-3 py-8 text-center text-slate-400">
+                  <div class="flex flex-col items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
+                      <span class="text-slate-400">📦</span>
+                    </div>
+                    <div class="text-sm">Loading low stock items...</div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Reorder Summary -->
+        <div id="reorderSummary" class="border-t border-slate-200 p-4 bg-gradient-to-r from-amber-50 to-orange-50 hidden">
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="font-medium text-amber-800">Reorder Summary</div>
+              <div class="text-xs text-amber-600 mt-0.5">Total suggested reorder value</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <div class="text-right">
+                <div id="totalReorderValue" class="text-lg font-bold text-amber-800">₹0</div>
+                <div id="totalReorderItems" class="text-xs text-amber-600">0 items</div>
+              </div>
+              <button id="bulkReorderBtn" onclick="createBulkPurchaseOrder()" class="px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors flex items-center gap-2">
+                🚀 Bulk Reorder
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- File Uploads / RAG Index -->
+    <!-- Mobile Camera Scan -->
+    <div class="card p-4 bg-white">
+      <div class="font-semibold heading">Scan with Camera (Mobile)</div>
+      <div class="text-xs muted mt-1">Snap a photo of an invoice/policy/warranty and index it</div>
+
+      <form id="cameraScanForm" class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+        <div class="space-y-2">
+          <div class="text-xs muted">Document Type</div>
+          <select id="cameraDocType" class="input bg-white w-full">
+            <option value="invoice">Invoice</option>
+            <option value="warranty">Warranty</option>
+            <option value="policy">Policy</option>
+            <option value="note">Note</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-xs muted">Open Camera</div>
+          <!-- capture="environment" hints to use the rear cam on mobile -->
+          <input id="cameraInput" type="file" accept="image/*" capture="environment" class="input w-full bg-white" />
+          <div class="text-[11px] text-slate-500">Tip: good light, fill the frame.</div>
+        </div>
+
+        <div class="space-y-2">
+          <div class="text-xs muted">Actions</div>
+          <button id="cameraUploadBtn" type="button" class="btn btn-primary w-full" disabled>Scan & Upload</button>
+          <div id="cameraMsg" class="text-xs muted"></div>
+          <div id="cameraProgressContainer" class="w-full bg-slate-200 rounded-full h-2 mt-2 hidden">
+            <div id="cameraProgressBar" class="bg-blue-500 h-2 rounded-full" style="width:0%"></div>
+          </div>
+        </div>
+      </form>
+
+      <!-- Preview -->
+      <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <div class="text-xs muted mb-1">Preview</div>
+          <img id="cameraPreview" class="w-full max-h-80 object-contain rounded-lg border border-slate-200 bg-slate-50" alt="Preview"/>
+        </div>
+        <div>
+          <div class="text-xs muted mb-1">Compressed (target &lt; 1MB)</div>
+          <div class="flex items-center gap-2 text-[12px] text-slate-600">
+            <span id="origInfo">—</span>
+            <span>→</span>
+            <span id="compInfo">—</span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">We auto-resize to ~1600px wide and JPEG quality ~0.7 (lower if needed).</div>
+        </div>
+      </div>
+    </div>
+    <!-- AR Product Overlay -->
+    <div class="card p-4 bg-white">
+      <div class="font-semibold heading">AR Scan (Live)</div>
+      <div class="text-xs muted">Point your camera at a product barcode or shelf tag.</div>
+
+      <div class="mt-3 flex gap-2">
+        <button id="arStart" class="btn btn-primary">Start Camera</button>
+        <button id="arStop" class="btn btn-outline">Stop</button>
+        <div id="arMsg" class="text-xs muted"></div>
+      </div>
+
+      <!-- Video + overlay canvas -->
+      <div class="relative mt-4 w-full max-w-md">
+        <video id="arVideo" class="w-full rounded-lg border" autoplay playsinline muted></video>
+        <canvas id="arCanvas" class="absolute inset-0 pointer-events-none"></canvas>
+
+        <!-- Floating overlay card anchored near detection box -->
+        <div id="arOverlay"
+             class="absolute px-3 py-2 rounded-xl shadow-xl bg-black/70 text-white text-[12px] opacity-0 transition-all duration-200"
+             style="transform: translate(-50%, -110%); will-change: transform, opacity;">
+          <div id="arName" class="font-semibold text-[13px]">—</div>
+          <div id="arPrice" class="text-green-300">—</div>
+          <div id="arStock" class="text-[11px] text-slate-200">—</div>
+          <div id="arTip" class="text-[11px] mt-1 italic text-slate-300">—</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (() => {
+        const API_BASE = (window.API_BASE || "").replace(/\/+$/,"");
+        const input = document.getElementById('cameraInput');
+        const btn = document.getElementById('cameraUploadBtn');
+        const msg = document.getElementById('cameraMsg');
+        const prev = document.getElementById('cameraPreview');
+        const typeSel = document.getElementById('cameraDocType');
+        const origInfo = document.getElementById('origInfo');
+        const compInfo = document.getElementById('compInfo');
+
+        let compressedBlob = null;
+        let originalFile = null;
+
+        function human(n){
+          if (n < 1024) return n + ' B';
+          if (n < 1024*1024) return (n/1024).toFixed(1) + ' KB';
+          return (n/1024/1024).toFixed(2) + ' MB';
+        }
+
+        function drawToCanvas(img, maxW=1600, maxH=1600){
+          const ratio = Math.min(1, maxW / img.width, maxH / img.height);
+          const w = Math.round(img.width * ratio);
+          const h = Math.round(img.height * ratio);
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const g = canvas.getContext('2d');
+          // simple background to avoid black where transparent
+          g.fillStyle = '#fff'; g.fillRect(0,0,w,h);
+          g.drawImage(img, 0, 0, w, h);
+          return canvas;
+        }
+
+        async function compressImage(file, targetMaxBytes = 1024*1024) {
+          // Load into <img>
+          const dataURL = await new Promise((res, rej) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result);
+            r.onerror = rej;
+            r.readAsDataURL(file);
+          });
+
+          const img = await new Promise((res, rej) => {
+            const el = new Image();
+            el.onload = () => res(el);
+            el.onerror = rej;
+            el.src = dataURL;
+          });
+
+          prev.src = dataURL;
+          origInfo.textContent = `Original: ${img.width}×${img.height}, ${human(file.size)}`;
+
+          // Draw to canvas (downscale if needed)
+          const canvas = drawToCanvas(img, 1600, 1600);
+
+          // Try descending JPEG qualities until < 1MB (or very low)
+          let q = 0.72, blob;
+          for (; q >= 0.4; q -= 0.06) {
+            blob = await new Promise((res) => canvas.toBlob(res, 'image/jpeg', q));
+            if (blob && blob.size <= targetMaxBytes) break;
+          }
+          if (!blob) {
+            msg.textContent = 'Compression failed.';
+            return null;
+          }
+          compInfo.textContent = `Compressed: ${canvas.width}×${canvas.height}, ${human(blob.size)} (q≈${q.toFixed(2)})`;
+          return blob;
+        }
+
+        input?.addEventListener('change', async () => {
+          msg.textContent = '';
+          compressedBlob = null;
+          originalFile = input.files && input.files[0] ? input.files[0] : null;
+          if (!originalFile) { btn.disabled = true; return; }
+
+          try {
+            const blob = await compressImage(originalFile);
+            if (!blob) { btn.disabled = true; return; }
+            compressedBlob = blob;
+            btn.disabled = false;
+          } catch (e) {
+            console.error(e);
+            msg.textContent = 'Failed to load image. Try another photo.';
+            btn.disabled = true;
+          }
+        });
+
+        btn?.addEventListener('click', async () => {
+          if (!compressedBlob) { msg.textContent = 'No photo selected.'; return; }
+
+          msg.textContent = 'Uploading & Indexing…';
+          const progressContainer = document.getElementById('cameraProgressContainer');
+          const progressBar = document.getElementById('cameraProgressBar');
+          progressContainer.classList.remove('hidden');
+          progressBar.style.width = '0%';
+          progressBar.className = 'bg-blue-500 h-2 rounded-full';
+
+          const fd = new FormData();
+          fd.append('type', typeSel.value || 'other');
+          const name = (originalFile?.name || 'scan.jpg').replace(/\.[^.]+$/, '.jpg');
+          fd.append('file', new File([compressedBlob], name, { type: 'image/jpeg' }));
+          fd.append('tenant_id', 'demo');
+
+          try {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', API_BASE + '/api/ingest/scan', true);
+
+            // Track upload progress
+            xhr.upload.onprogress = function (e) {
+              if (e.lengthComputable) {
+                const percent = Math.round((e.loaded / e.total) * 100);
+                progressBar.style.width = percent + '%';
+              }
+            };
+
+            xhr.onload = function () {
+              if (xhr.status >= 200 && xhr.status < 300) {
+                progressBar.style.width = '100%';
+                progressBar.className = 'bg-green-500 h-2 rounded-full';
+                msg.textContent = '✅ Indexed successfully!';
+              } else {
+                progressBar.className = 'bg-red-500 h-2 rounded-full';
+                msg.textContent = '❌ Error: ' + xhr.statusText;
+              }
+            };
+
+            xhr.onerror = function () {
+              progressBar.className = 'bg-red-500 h-2 rounded-full';
+              msg.textContent = '❌ Network error.';
+            };
+
+            xhr.send(fd);
+          } catch (err) {
+            progressBar.className = 'bg-red-500 h-2 rounded-full';
+            msg.textContent = '❌ Upload failed: ' + err.message;
+          }
+        });
+
+      })();
+    </script>
+
+    <script>
+      (function wireScan(){
+        const form = document.querySelector('#uploadScan');
+        const msg  = document.querySelector('#uploadScanMsg');
+        if(!form) return;
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const fd = new FormData(form);
+          try {
+            const res = await fetch((window.API_BASE||"") + '/api/ingest/scan', { method:'POST', body: fd });
+            const ct = res.headers.get('content-type')||'';
+            const payload = ct.includes('application/json') ? await res.json() : await res.text();
+            msg.textContent = typeof payload === 'string' ? payload : JSON.stringify(payload);
+          } catch(err) { msg.textContent = 'Scan failed: ' + err.message; }
+        });
+      })();
+    </script>
+
+
+  </section>
+
+  <!-- Right column -->
+  <aside class="xl:col-span-4 space-y-6">
+    <!-- Chat -->
+    <div class="card p-0 overflow-hidden bg-white">
+      <div class="p-4 flex items-center justify-between">
+        <div>
+          <div class="font-semibold heading">Talk to Your Shop</div>
+          <div class="text-xs muted mt-0.5">Asks tools & RAG (Llama 3)</div>
+        </div>
+        <span class="badge bg-emerald-100 text-emerald-700">Agent</span>
+      </div>
+      <div id="chatBox" class="px-4 pb-4 h-[420px] overflow-y-auto bg-gradient-to-b from-white to-indigo-50/40"></div>
+      <form id="chatForm" class="border-t border-slate-200 p-3 flex items-center gap-2 bg-slate-50">
+        <input id="chatInput" class="input flex-1 bg-white" placeholder="e.g. availability SKU-302 18in|22K|Gold" />
+        <button class="btn btn-primary" type="submit">Ask</button>
+      </form>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="card p-4 bg-white">
+      <div class="font-semibold heading">AI Suggestions</div>
+      <div class="text-xs muted mt-0.5">High-impact actions ready to run</div>
+      <ul id="suggList" class="mt-3 space-y-2"></ul>
+    </div>
+  </aside>
+</main>
+
+<footer class="max-w-7xl mx-auto px-4 pb-10 text-[11px] text-slate-500">
+  Tailwind + Chart.js · Colorful theme · Served by Spring Boot
+</footer>
+
+<!-- Inline JS (no external app.js needed) -->
+<script>
+  const API_BASE = (window.API_BASE || "").replace(/\/+$/, "");
+  const el = (q) => document.querySelector(q);
+  const chatBox = el('#chatBox');
+  const DEFAULT_TIMEOUT_MS = 15000;
+
+  async function fetchJSON(path, opts = {}, timeoutMs = DEFAULT_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(API_BASE + path, { ...opts, signal: controller.signal });
+      const ct = res.headers.get("content-type") || "";
+      if (!res.ok) {
+        const body = ct.includes("application/json") ? await res.json().catch(()=>({})) : await res.text();
+        throw new Error(typeof body === "string" ? body : JSON.stringify(body));
+      }
+      return ct.includes("application/json") ? res.json() : res.text();
+    } finally { clearTimeout(id); }
+  }
+
+  function bubble(who, text) {
+    const b = document.createElement('div');
+    b.className = who === 'bot'
+            ? 'max-w-[85%] bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-2xl px-3 py-2 text-sm shadow-sm'
+            : 'max-w-[85%] bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl px-3 py-2 text-sm shadow-sm';
+    b.textContent = text;
+    const row = document.createElement('div');
+    row.className = 'flex ' + (who==='bot' ? 'justify-start' : 'justify-end');
+    row.appendChild(b);
+    chatBox.appendChild(row);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  }
+
+  function setStatus(node, msg) { node.textContent = msg; node.classList.add('text-slate-700'); }
+
+  // Low stock + KPI
+  // Export low stock data function
+  function exportLowStockData() {
+    try {
+      // Get the current low stock data from the table
+      const table = document.querySelector('#lowStockBody');
+      const rows = table.querySelectorAll('tr');
+      
+      if (rows.length === 0) {
+        showNotification('No data to export', 'error');
+        return;
+      }
+
+      // Create CSV data
+      let csvContent = 'SKU,Variant,Current Stock,Reorder Level,Suggested Qty,Location,Status\n';
+      
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length >= 7) {
+          const sku = cells[0].textContent.trim();
+          const variant = cells[1].textContent.trim();
+          const currentStock = cells[2].textContent.trim();
+          const reorderLevel = cells[3].textContent.trim();
+          const suggestedQty = cells[4].textContent.trim();
+          const location = cells[5].textContent.trim();
+          
+          // Determine status based on stock level
+          let status = 'Well Stocked';
+          const stock = parseInt(currentStock);
+          const level = parseInt(reorderLevel);
+          if (stock <= level * 0.5) {
+            status = 'Critical';
+          } else if (stock <= level) {
+            status = 'Low Stock';
+          }
+          
+          csvContent += `"${sku}","${variant}","${currentStock}","${reorderLevel}","${suggestedQty}","${location}","${status}"\n`;
+        }
+      });
+
+      // Create and download CSV file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `low-stock-report-${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showNotification('Low stock data exported successfully!', 'success');
+    } catch (error) {
+      console.error('Export failed:', error);
+      showNotification('Export failed: ' + error.message, 'error');
+    }
+  }
+
+  // Auto-refresh low stock data every 5 minutes
+  function startLowStockAutoRefresh() {
+    setInterval(() => {
+      loadLowStock();
+    }, 5 * 60 * 1000); // 5 minutes
+  }
+
+  // Enhanced loadLowStock with loading state
+  async function loadLowStock() {
+    const body = el('#lowStockBody');
+    const summary = el('#reorderSummary');
+    const refreshBtn = el('#refreshLowStock');
+    
+    // Show loading state
+    refreshBtn.innerHTML = '⏳ Loading...';
+    refreshBtn.disabled = true;
+    
+    try {
+      const data = await fetchJSON('/api/inventory/low-stock');
+      el('#kpiLowStock').textContent = data.length ?? 0;
+      
+      if (!data || data.length === 0) {
+        body.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-3 py-8 text-center text-slate-400">
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                  <span class="text-green-500">✅</span>
+                </div>
+                <div class="text-sm font-medium text-green-600">All items well stocked!</div>
+                <div class="text-xs text-slate-500">No reorders needed at this time</div>
+              </div>
+            </td>
+          </tr>`;
+        summary.classList.add('hidden');
+        return;
+      }
+
+      body.innerHTML = '';
+      let totalReorderValue = 0;
+      let totalReorderItems = 0;
+
+      (data || []).forEach(row => {
+        const suggestedQty = row.suggestReorderQty || 0;
+        const currentStock = row.qty || 0;
+        const reorderLevel = row.reorderLevel || 0;
+        
+        // Calculate stock status
+        let stockStatus = 'text-green-600';
+        let stockIcon = '🟢';
+        if (currentStock <= reorderLevel * 0.5) {
+          stockStatus = 'text-red-600';
+          stockIcon = '🔴';
+        } else if (currentStock <= reorderLevel) {
+          stockStatus = 'text-amber-600';
+          stockIcon = '🟡';
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'border-t border-slate-200 hover:bg-slate-50/80 transition-colors';
+        tr.innerHTML = `
+            <td class="px-3 py-3">
+              <div class="flex items-center gap-2">
+                <span class="text-lg">${stockIcon}</span>
+                <div>
+                  <div class="font-medium text-slate-900">${row.sku ?? '-'}</div>
+                  <div class="text-xs text-slate-500">SKU</div>
+                </div>
+              </div>
+            </td>
+            <td class="px-3 py-3">
+              <div class="font-medium text-slate-900">${row.variant ?? '-'}</div>
+            </td>
+            <td class="px-3 py-3">
+              <div class="flex items-center gap-2">
+                <span class="font-bold ${stockStatus}">${currentStock}</span>
+                <span class="text-xs text-slate-500">units</span>
+              </div>
+            </td>
+            <td class="px-3 py-3">
+              <div class="text-sm text-slate-600">${reorderLevel}</div>
+            </td>
+            <td class="px-3 py-3">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-amber-700">${suggestedQty}</span>
+                <span class="text-xs text-slate-500">units</span>
+              </div>
+            </td>
+            <td class="px-3 py-3">
+              <div class="text-sm text-slate-600">${row.location ?? '-'}</div>
+            </td>
+            <td class="px-3 py-3">
+              <div class="flex flex-col gap-2">
+                <button class="px-3 py-2 rounded-lg bg-amber-100 text-amber-800 text-xs font-medium hover:bg-amber-200 transition-colors"
+                  data-sku="${row.sku}" data-variant="${row.variant}" data-qty="${suggestedQty}" onclick="createPurchaseOrder(this)">
+                  📋 Create PO
+                </button>
+                <button class="px-2 py-1.5 rounded-md bg-slate-100 text-slate-600 text-xs hover:bg-slate-200 transition-colors"
+                  data-sku="${row.sku}" data-variant="${row.variant}" onclick="viewProductDetails(this)">
+                  👁️ View
+                </button>
+              </div>
+            </td>`;
+        body.appendChild(tr);
+
+        // Add to totals (assuming we have product cost data)
+        if (suggestedQty > 0) {
+          totalReorderItems += suggestedQty;
+          // For demo purposes, assume average cost of ₹500 per unit
+          totalReorderValue += suggestedQty * 500;
+        }
+      });
+
+      // Show reorder summary if there are items to reorder
+      if (totalReorderItems > 0) {
+        el('#totalReorderValue').textContent = `₹${(totalReorderValue / 1000).toFixed(1)}K`;
+        el('#totalReorderItems').textContent = `${totalReorderItems} items`;
+        summary.classList.remove('hidden');
+      } else {
+        summary.classList.add('hidden');
+      }
+
+    } catch (e) {
+      console.error(e);
+      el('#kpiLowStock').textContent = '–';
+      body.innerHTML = `
+        <tr>
+          <td colspan="7" class="px-3 py-8 text-center text-slate-400">
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center">
+                <span class="text-red-500">❌</span>
+              </div>
+              <div class="text-sm font-medium text-red-600">Failed to load low-stock data</div>
+              <div class="text-xs text-slate-500">Check API connection and backend status</div>
+              <button onclick="loadLowStock()" class="mt-2 px-3 py-1.5 rounded-md bg-slate-100 text-slate-600 text-xs hover:bg-slate-200">
+                🔄 Retry
+              </button>
+            </div>
+          </td>
+        </tr>`;
+      summary.classList.add('hidden');
+    } finally {
+      // Reset refresh button
+      refreshBtn.innerHTML = '🔄 Refresh';
+      refreshBtn.disabled = false;
+    }
+  }
+
+  // Create Purchase Order function
+  function createPurchaseOrder(button) {
+    const sku = button.getAttribute('data-sku');
+    const variant = button.getAttribute('data-variant');
+    const qty = button.getAttribute('data-qty');
+    
+    // Show confirmation dialog
+    if (confirm(`Create Purchase Order for:\nSKU: ${sku}\nVariant: ${variant}\nQuantity: ${qty} units\n\nProceed?`)) {
+      // Here you would typically make an API call to create the PO
+      // For now, we'll show a success message
+      button.innerHTML = '✅ PO Created';
+      button.className = 'px-3 py-2 rounded-lg bg-green-100 text-green-800 text-xs font-medium';
+      button.disabled = true;
+      
+      // Show success notification
+      showNotification(`Purchase Order created for ${sku} (${variant})`, 'success');
+      
+      // Refresh the low stock data after a delay
+      setTimeout(() => {
+        loadLowStock();
+      }, 2000);
+    }
+  }
+
+  // View Product Details function
+  function viewProductDetails(button) {
+    const sku = button.getAttribute('data-sku');
+    const variant = button.getAttribute('data-variant');
+    
+    // Here you would typically open a modal or navigate to product details
+    // For now, we'll show the info in the chat
+    const chatInput = el('#chatInput');
+    if (chatInput) {
+      chatInput.value = `Show details for ${sku} ${variant}`;
+      chatInput.focus();
+    }
+  }
+
+  // Create Bulk Purchase Order function
+  function createBulkPurchaseOrder() {
+    const table = document.querySelector('#lowStockBody');
+    const rows = table.querySelectorAll('tr');
+    
+    if (rows.length === 0) {
+      showNotification('No items to reorder', 'error');
+      return;
+    }
+
+    // Collect all items that need reordering
+    const reorderItems = [];
+    rows.forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 7) {
+        const sku = cells[0].querySelector('.font-medium')?.textContent.trim();
+        const variant = cells[1].querySelector('.font-medium')?.textContent.trim();
+        const suggestedQty = cells[4].querySelector('.font-bold')?.textContent.trim();
+        
+        if (sku && variant && suggestedQty && parseInt(suggestedQty) > 0) {
+          reorderItems.push({
+            sku: sku,
+            variant: variant,
+            quantity: parseInt(suggestedQty)
+          });
+        }
+      }
+    });
+
+    if (reorderItems.length === 0) {
+      showNotification('No items need reordering', 'info');
+      return;
+    }
+
+    // Show confirmation with summary
+    const totalItems = reorderItems.reduce((sum, item) => sum + item.quantity, 0);
+    const summary = reorderItems.map(item => 
+      `• ${item.sku} (${item.variant}): ${item.quantity} units`
+    ).join('\n');
+
+    if (confirm(`Create Bulk Purchase Order for ${reorderItems.length} products:\n\n${summary}\n\nTotal: ${totalItems} units\n\nProceed?`)) {
+      // Here you would typically make an API call to create multiple POs
+      // For now, we'll show a success message and update the UI
+      
+      // Disable all individual PO buttons
+      const poButtons = table.querySelectorAll('button[onclick*="createPurchaseOrder"]');
+      poButtons.forEach(btn => {
+        btn.innerHTML = '✅ PO Created';
+        btn.className = 'px-3 py-2 rounded-lg bg-green-100 text-green-800 text-xs font-medium';
+        btn.disabled = true;
+      });
+
+      // Disable bulk reorder button
+      const bulkBtn = el('#bulkReorderBtn');
+      bulkBtn.innerHTML = '✅ Bulk PO Created';
+      bulkBtn.className = 'px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium';
+      bulkBtn.disabled = true;
+
+      showNotification(`Bulk Purchase Order created for ${reorderItems.length} products!`, 'success');
+      
+      // Refresh the data after a delay
+      setTimeout(() => {
+        loadLowStock();
+      }, 3000);
+    }
+  }
+
+  // Enhanced notification with better styling
+  function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification-toast');
+    existingNotifications.forEach(n => n.remove());
+
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification-toast fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-x-full max-w-sm`;
+    
+    // Set colors and icon based on type
+    let icon = 'ℹ️';
+    if (type === 'success') {
+      notification.className += ' bg-green-500 text-white';
+      icon = '✅';
+    } else if (type === 'error') {
+      notification.className += ' bg-red-500 text-white';
+      icon = '❌';
+    } else if (type === 'warning') {
+      notification.className += ' bg-amber-500 text-white';
+      icon = '⚠️';
+    } else {
+      notification.className += ' bg-blue-500 text-white';
+      icon = 'ℹ️';
+    }
+    
+    notification.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="text-lg">${icon}</span>
+        <span class="text-sm">${message}</span>
+      </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+      notification.classList.remove('translate-x-full');
+    }, 100);
+    
+    // Remove after 4 seconds
+    setTimeout(() => {
+      notification.classList.add('translate-x-full');
+      setTimeout(() => {
+        if (document.body.contains(notification)) {
+          document.body.removeChild(notification);
+        }
+      }, 300);
+    }, 4000);
+  }
+
+  // Chart demo
+  function initSalesChart() {
+    const ctx = document.getElementById('salesChart'); if (!ctx) return;
+    const labels = ['Jul 01','Jul 05','Jul 10','Jul 15','Jul 20','Jul 25','Jul 30'];
+    const data = [24,18,31,27,36,42,48];
+    new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Sales (k)', data, borderWidth: 3, tension: 0.35 }] },
+      options: {
+        responsive: true,
+        elements: { point: { radius: 3 } },
+        scales: {
+          y: { grid: { color: '#e2e8f0' }, ticks: { color: '#475569' } },
+          x: { grid: { color: '#f1f5f9' }, ticks: { color: '#475569' } }
+        },
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // Chat
+  async function askChat(q) {
+    bubble('user', q);
+    try {
+      const data = await fetchJSON('/api/chat/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant_id: 'demo', q })
+      });
+      bubble('bot', data?.answer || 'No answer. Check LLM/RAG.');
+      if (Array.isArray(data?.suggestions)) renderSuggestions(data.suggestions);
+    } catch (e) {
+      bubble('bot', `Chat failed: ${e.message}`);
+    }
+  }
+
+  // Suggestions
+  function renderSuggestions(items) {
+    const ul = el('#suggList');
+    ul.innerHTML = '';
+    (items || []).forEach(s => {
+      const li = document.createElement('li');
+      li.className = 'flex items-center justify-between gap-2 border border-slate-200 rounded-xl px-3 py-2 bg-gradient-to-r from-white to-indigo-50/40';
+      li.innerHTML = `
+          <div>
+            <div class="text-sm font-medium">${s.title || s.text || 'Suggestion'}</div>
+            <div class="text-[11px] text-slate-500">${s.type || ''} ${s.impact ? '· ' + s.impact : ''}</div>
+          </div>
+          <button class="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs hover:brightness-110">Run</button>`;
+      ul.appendChild(li);
+    });
+  }
+
+  // Uploads
+  function wireUpload(formSelector, type, msgSelector) {
+    const form = el(formSelector);
+    const msg = el(msgSelector);
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const fd = new FormData(form);
+      fd.append('type', type);
+      try {
+        const res = await fetch(API_BASE + '/api/ingest/file', { method: 'POST', body: fd });
+        const ct = res.headers.get('content-type') || '';
+        const payload = ct.includes('application/json') ? await res.json() : await res.text();
+        setStatus(msg, typeof payload === 'string' ? payload : JSON.stringify(payload));
+        if (type === 'inventory') loadLowStock();
+      } catch (err) {
+        setStatus(msg, `Upload failed: ${err.message}`);
+      }
+    });
+  }
+
+  // Boot
+  document.addEventListener('DOMContentLoaded', () => {
+    console.log('[UI] API_BASE =', API_BASE || '(same origin)');
+    bubble('bot', 'Hi! Ask: “availability SKU-302 18in|22K|Gold” or “what is the returns policy?”');
+
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    chatForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const q = chatInput.value.trim();
+      if (!q) return;
+      chatInput.value = '';
+      askChat(q);
+    });
+
+    wireUpload('#uploadInventory','inventory','#uploadInventoryMsg');
+    wireUpload('#uploadProducts','products','#uploadProductsMsg');
+    wireUpload('#uploadSales','sales','#uploadSalesMsg');
+    wireUpload('#uploadPolicy','rag_policies','#uploadPolicyMsg');
+    wireUpload('#uploadCatalog','rag_catalog','#uploadCatalogMsg');
+
+    initSalesChart();
+    loadLowStock();
+    startLowStockAutoRefresh(); // Start auto-refresh
+  });
+</script>
+<script>
+  (() => {
+    const API = (window.API_BASE || "") + "/api/vision/lookup";
+
+    const startBtn = document.getElementById('arStart');
+    const stopBtn  = document.getElementById('arStop');
+    const msg      = document.getElementById('arMsg');
+    const video    = document.getElementById('arVideo');
+    const canvas   = document.getElementById('arCanvas');
+    const overlay  = document.getElementById('arOverlay');
+    const oName    = document.getElementById('arName');
+    const oPrice   = document.getElementById('arPrice');
+    const oStock   = document.getElementById('arStock');
+    const oTip     = document.getElementById('arTip');
+
+    // iOS/Safari-friendly flags/attrs
+    video.setAttribute('playsinline', '');
+    video.setAttribute('muted', '');
+    video.muted = true; // Needed so autoplay works on iOS
+    video.autoplay = true;
+
+    let stream = null, rafId = null, detector = null;
+    let lastCode = null, lastFetchTs = 0;
+    let started = false;
+
+    // Feature / origin checks with helpful messaging
+    function checkEnvironment() {
+      const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+      if (!isSecure) {
+        warn("Camera requires HTTPS or http://localhost. Serve this page over HTTPS/localhost.");
+        return false;
+      }
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        warn("Camera API (getUserMedia) not available in this browser.");
+        return false;
+      }
+      return true;
+    }
+
+    function info(t){ msg.textContent = t; console.log("[AR]", t); }
+    function warn(t){ msg.textContent = t; console.warn("[AR]", t); }
+    function err(t){ msg.textContent = t; console.error("[AR]", t); }
+
+    function fitCanvas(){
+      const w = video.videoWidth || video.clientWidth || 640;
+      const h = video.videoHeight || video.clientHeight || 480;
+      canvas.width = w; canvas.height = h;
+    }
+
+    function drawBox(box){
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(0,200,255,0.9)';
+      let anchor = { x: canvas.width/2, y: canvas.height*0.4 };
+
+      if (box?.cornerPoints && box.cornerPoints.length >= 4) {
+        const pts = box.cornerPoints;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+        ctx.closePath(); ctx.stroke();
+        anchor = { x: (pts[0].x+pts[2].x)/2, y: Math.min(pts[0].y, pts[1].y) };
+      } else if (box?.boundingBox) {
+        const b = box.boundingBox;
+        ctx.strokeRect(b.x, b.y, b.width, b.height);
+        anchor = { x: b.x + b.width/2, y: b.y };
+      }
+      return anchor;
+    }
+
+    function showOverlayAt(anchor, data){
+      overlay.style.left = `${anchor.x}px`;
+      overlay.style.top  = `${Math.max(8, anchor.y - 8)}px`;
+      oName.textContent  = data?.name ?? 'Unknown';
+      oPrice.textContent = data?.price ? `₹${data.price}` : (data?.mrp ? `MRP ₹${data.mrp}` : '—');
+      oStock.textContent = (data?.stock != null) ? `Stock: ${data.stock}` : 'Stock: —';
+      oTip.textContent   = data?.tip ?? 'Say “compare similar” or “any offer on this?”';
+      overlay.style.opacity = '1';
+      overlay.style.transform = 'translate(-50%, -110%) scale(1)';
+    }
+    function hideOverlay(){
+      overlay.style.opacity = '0';
+      overlay.style.transform = 'translate(-50%, -110%) scale(0.98)';
+      const ctx = canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height);
+    }
+
+    async function fetchProductByCode(code){
+      const now = Date.now();
+      if (code === lastCode && now - lastFetchTs < 1200) return null;
+      lastCode = code; lastFetchTs = now;
+      try {
+        const res = await fetch(`${API}?code=${encodeURIComponent(code)}&tenant_id=demo`);
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        return await res.json();
+      } catch(e) {
+        warn('Lookup error: ' + e.message);
+        return null;
+      }
+    }
+
+    async function loop(){
+      if (!started) return;
+      fitCanvas();
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      try {
+        if (!detector && 'BarcodeDetector' in window) {
+          const formats = ['qr_code','ean_13','ean_8','code_128','code_39','upc_a','upc_e'];
+          detector = new window.BarcodeDetector({ formats });
+          info('BarcodeDetector initialized.');
+        }
+
+        if (detector) {
+          const barcodes = await detector.detect(canvas);
+          if (barcodes && barcodes.length) {
+            const b = barcodes[0];
+            const anchor = drawBox(b);
+            const data = await fetchProductByCode(b.rawValue);
+            if (data) showOverlayAt(anchor, data);
+          } else {
+            hideOverlay();
+          }
+        } else {
+          // If you want, add a fallback using @zxing/browser for wide support.
+          // warn('BarcodeDetector not supported; consider adding @zxing/browser fallback.');
+        }
+      } catch(e) {
+        // Surface detection errors, but keep loop alive
+        console.debug('Detection error:', e);
+      }
+      rafId = requestAnimationFrame(loop);
+    }
+
+    async function startCamera(){
+      if (!checkEnvironment()) return;
+      try {
+        // On iOS, autoplay only works if muted+playsinline set and called from a user gesture
+        const constraints = {
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          },
+          audio: false
+        };
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+
+        // Wait for metadata so videoWidth/Height are available
+        await new Promise((res, rej) => {
+          const onLoaded = () => { video.removeEventListener('loadedmetadata', onLoaded); res(); };
+          video.addEventListener('loadedmetadata', onLoaded);
+          // Safety timeout
+          setTimeout(res, 1500);
+        });
+
+        await video.play().catch(()=>{}); // iOS sometimes resolves play without actually playing unless muted/inline
+        started = true;
+        info('Camera ready. Point at a barcode or shelf tag.');
+        loop();
+      } catch(e) {
+        // Rich error messages
+        if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
+          err('Camera permission denied. Check browser/site settings (Settings > Safari/Chrome > Camera).');
+        } else if (e.name === 'NotFoundError' || e.name === 'OverconstrainedError') {
+          err('No suitable camera found. Try switching cameras or removing constraints.');
+        } else {
+          err('Camera error: ' + e.message);
+        }
+        console.error(e);
+      }
+    }
+
+    function stopCamera(){
+      started = false;
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = null;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = null;
+      video.srcObject = null;
+      hideOverlay();
+      info('Camera stopped.');
+    }
+
+    startBtn?.addEventListener('click', startCamera, { passive: true });
+    stopBtn?.addEventListener('click', stopCamera, { passive: true });
+  })();
+</script>
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+</body>
+</html>
