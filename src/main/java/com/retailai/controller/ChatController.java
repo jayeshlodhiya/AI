@@ -17,7 +17,6 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/chat")
 public class ChatController {
-
     private final ChatService chat;
 
     public ChatController(ChatService chat) {
