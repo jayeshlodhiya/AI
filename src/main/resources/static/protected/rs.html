@@ -2005,7 +2005,7 @@
                 window.location.assign(`${window.location.origin}/?logout`);
             }
         } catch (e) {
-            alert('Logout error: ' + e.message);
+            window.location.assign(`${window.location.origin}/?logout`);
         }
     }
 </script>

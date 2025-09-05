@@ -2005,7 +2005,7 @@
                // alert('Logout failed: ' + res.status);
             }
         } catch (e) {
-            alert('Logout error: ' + e.message);
+            window.location.assign(`${window.location.origin}/?logout`);
         }
     }
 </script>
