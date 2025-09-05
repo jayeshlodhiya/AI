@@ -387,9 +387,11 @@ function getCookie(name){
  * - Security config uses CookieCsrfTokenRepository (so browser has XSRF-TOKEN cookie)
  * - logoutUrl("/auth/logout") (default POST)
  */
+const DEFAULT_API_BASE = window.location.origin;
 async function doLogout() {
     try {
-        const res = await fetch('/auth/logout', {
+        const url  = `${DEFAULT_API_BASE}/auth/logout`;
+        const res = await fetch(url, {
             method: 'POST',
             credentials: 'include'
         });
