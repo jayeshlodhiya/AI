@@ -36,7 +36,7 @@
         .btn-primary{background:#111827;color:#fff;border:none;padding:.6rem 1rem;border-radius:12px;cursor:pointer;font-weight:700}
         .btn-primary:hover{opacity:.95}
 
-        /* Hero etc (unchanged) */
+        /* Hero etc */
         .hero{min-height:100vh;display:flex;align-items:center;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);position:relative;overflow:hidden}
         .hero::before{content:"";position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.05)"/><circle cx="50" cy="10" r="0.5" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');opacity:.3}
         .hero-content{position:relative;z-index:2;text-align:center;color:#fff}
@@ -83,7 +83,7 @@
         /* Auth Modal */
         .modal{position:fixed;inset:0;background:rgba(2,6,23,.55);display:none;align-items:center;justify-content:center;z-index:1201}
         .modal.open{display:flex}
-        .modal-card{width:min(560px,92vw);background:#fff;border-radius:16px;box-shadow:var(--shadow-xl);overflow:hidden}
+        .modal-card{width:min(560px,92vw);background:#fff;border-radius:16px;box-shadow:var(--shadow-xl);overflow:hidden;position:relative}
         .modal-header{display:flex}
         .tab{flex:1;text-align:center;padding:14px 10px;font-weight:800;cursor:pointer;border-bottom:3px solid transparent}
         .tab.active{border-bottom-color:var(--primary);color:var(--primary)}
@@ -91,8 +91,13 @@
         .close-x{position:absolute;right:18px;top:12px;background:transparent;border:none;font-size:22px;cursor:pointer}
         .auth-grid{display:grid;gap:12px}
         .auth-grid .row{display:flex;flex-direction:column;gap:6px}
-        .auth-actions-bottom{display:flex;align-items:center;gap:10px;margin-top:8px}
+        .auth-actions-bottom{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
         .small{color:var(--text-light);font-size:.9rem}
+        .link-btn{background:transparent;border:none;color:var(--primary);cursor:pointer;padding:0;font-weight:700}
+
+        /* Forgot forms */
+        .inline-note{font-size:.9rem;color:var(--text-light)}
+        .divider{height:1px;background:#e5e7eb;margin:8px 0}
 
         @keyframes fadeInUp{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:none}}
         .fade-in{opacity:0;transform:translateY(20px);transition:.6s}
@@ -237,7 +242,7 @@
             <div class="tab" id="tabSignUp">Sign Up</div>
         </div>
         <div class="modal-body">
-            <!-- Sign In form (posts to Spring Security) -->
+            <!-- Sign In form -->
             <form id="signInForm" method="post" action="/auth/login" class="auth-grid">
                 <div class="row">
                     <label class="label">Username (email)</label>
@@ -251,10 +256,13 @@
                 <div class="auth-actions-bottom">
                     <button class="submit-btn" type="submit">Sign In</button>
                     <span class="small">New here? <a href="#" id="switchToSignUp">Create account</a></span>
+                    <span class="divider" style="flex-basis:100%"></span>
+                    <button type="button" class="link-btn" id="openForgotUsername">Forgot username?</button>
+                    <button type="button" class="link-btn" id="openForgotPassword">Forgot password?</button>
                 </div>
             </form>
 
-            <!-- Sign Up form (AJAX to /auth/signup) -->
+            <!-- Sign Up form -->
             <form id="signUpForm" class="auth-grid" style="display:none">
                 <div class="row">
                     <label class="label">Full name</label>
@@ -273,19 +281,58 @@
                     <span class="small">Already have an account? <a href="#" id="switchToSignIn">Sign in</a></span>
                 </div>
             </form>
+
+            <!-- Forgot Username -->
+            <form id="forgotUsernameForm" class="auth-grid" style="display:none">
+                <div class="row">
+                    <label class="label">Registered phone number</label>
+                    <input class="input" name="phone" type="tel" required placeholder="+91 98xxxxxx">
+                </div>
+                <div class="row">
+                    <label class="label">OR alternate email</label>
+                    <input class="input" name="recoveryEmail" type="email" placeholder="optional">
+                </div>
+                <div class="inline-note">We’ll send your username to your verified contact.</div>
+                <div class="auth-actions-bottom">
+                    <button class="submit-btn" id="forgotUsernameBtn" type="submit">Send Username</button>
+                    <button class="btn-link" type="button" id="backToSignIn1">Back</button>
+                </div>
+            </form>
+
+            <!-- Forgot Password -->
+            <form id="forgotPasswordForm" class="auth-grid" style="display:none">
+                <div class="row">
+                    <label class="label">Username (email)</label>
+                    <input class="input" name="username" type="email" required autocomplete="username">
+                </div>
+                <div class="inline-note">We’ll email a reset link if the account exists.</div>
+                <div class="auth-actions-bottom">
+                    <button class="submit-btn" id="forgotPasswordBtn" type="submit">Send Reset Link</button>
+                    <button class="btn-link" type="button" id="backToSignIn2">Back</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 
 <script>
-    // ===== CONFIG =====
-    const API_BASE = window.API_BASE || window.location.origin;
-    const LEAD_ENDPOINT = API_BASE + '/api/actions/leads';
-    // AUTH CONFIG (align these with your Spring Boot routes)
-    const SIGNUP_ENDPOINT = '/auth/signup';    // POST
-    // Login posts to /auth/login via form
+    /* ========= CONFIG (HTTPS-safe) ========= */
+    (function configureApiBase(){
+        let base = (window.API_BASE && window.API_BASE.trim()) || window.location.origin;
+        if (location.protocol === 'https:' && /^http:\/\//i.test(base)) {
+            try { const u = new URL(base); base = 'https://' + u.host; } catch {}
+        }
+        window.__API_BASE__ = base.replace(/\/+$/,'');
+    })();
 
-    // Smooth scroll
+    const API_BASE = window.__API_BASE__;
+    const LEAD_ENDPOINT = API_BASE + '/api/actions/leads';
+    const SIGNUP_ENDPOINT = '/auth/signup';             // POST (x-www-form-urlencoded)
+    const FORGOT_USERNAME_ENDPOINT = '/auth/forgot-username'; // POST
+    const FORGOT_PASSWORD_ENDPOINT = '/auth/forgot-password'; // POST
+    console.log('[Lead] endpoint =', LEAD_ENDPOINT);
+
+    /* ========= Smooth scroll / UI ========== */
     document.querySelectorAll('a[href^="#"]').forEach(a=>{
         a.addEventListener('click',e=>{
             e.preventDefault();
@@ -294,61 +341,97 @@
         });
     });
 
-    // Navbar scroll
     window.addEventListener('scroll',()=>{
         const n=document.getElementById('navbar');
         if(window.scrollY>50) n.classList.add('scrolled'); else n.classList.remove('scrolled');
     });
 
-    // Fade-in observer
     const io=new IntersectionObserver(es=>es.forEach(e=>e.isIntersecting&&e.target.classList.add('visible')),{threshold:.1,rootMargin:'0px 0px -50px 0px'});
     document.querySelectorAll('.fade-in').forEach(el=>io.observe(el));
 
-    // Counters
     function animateCounter(el,target){let c=0,inc=target/100;const t=setInterval(()=>{c+=inc;if(c>=target){c=target;clearInterval(t)}el.textContent=Math.floor(c)+'%'},20)}
     const so=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){const el=en.target;animateCounter(el,parseInt(el.dataset.target));so.unobserve(el)}}));
     document.querySelectorAll('.stats-counter').forEach(c=>so.observe(c));
 
-    // Floating dots
     function createFloatingElement(){const el=document.createElement('div');el.className='floating-element';el.style.left=Math.random()*100+'%';el.style.animationDelay=Math.random()*8+'s';el.style.animationDuration=(Math.random()*4+6)+'s';return el}
     const fc=document.querySelector('.floating-elements'); for(let i=0;i<50;i++) fc.appendChild(createFloatingElement());
+    document.getElementById('startJourney').addEventListener('click',e=>{ e.preventDefault(); document.querySelector('#contact').scrollIntoView({behavior:'smooth'}); });
 
-    // CTA ripple & scroll
-    document.getElementById('startJourney').addEventListener('click',e=>{
-        e.preventDefault(); document.querySelector('#contact').scrollIntoView({behavior:'smooth'});
-    });
-
-    // Toast helper
+    /* ========= Toast ========= */
     const toast=document.getElementById('toast');
     const showToast=(msg,type='success')=>{
         const el=document.createElement('div'); el.className='toast-msg '+(type==='error'?'error':type==='warn'?'warn':''); el.textContent=msg;
         toast.appendChild(el); setTimeout(()=>el.remove(),3500);
     };
 
-    // Contact form
-    const form=document.getElementById('contactForm'), submitBtn=document.getElementById('submitBtn'), helper=document.getElementById('formHelper');
-    const validEmail=e=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e), validPhone=p=>/^[0-9+\-\s()]{7,}$/.test(p);
-    form.addEventListener('submit',async e=>{
-        e.preventDefault(); if(document.getElementById('hp_field').value) return;
-        const name=nameEl.value.trim(), email=emailEl.value.trim(), phone=phoneEl.value.trim(), company=companyEl.value.trim(), message=messageEl.value.trim();
-    });
-    const nameEl=document.getElementById('name'), emailEl=document.getElementById('email'), phoneEl=document.getElementById('phone'), companyEl=document.getElementById('company'), messageEl=document.getElementById('message');
-    form.addEventListener('submit', async (e)=>{
-        e.preventDefault();
-        if(!nameEl.value||!emailEl.value||!phoneEl.value){showToast('Please fill required fields: Name, Email, Phone.','warn');return}
-        if(!validEmail(emailEl.value)){showToast('Please enter a valid email.','warn');return}
-        if(!validPhone(phoneEl.value)){showToast('Please enter a valid phone.','warn');return}
-        submitBtn.disabled=true; const original=submitBtn.textContent; submitBtn.textContent='Submitting…'; helper.textContent='Sending your details securely…';
-        const payload={name:nameEl.value.trim(),email:emailEl.value.trim(),phone:phoneEl.value.trim(),company:companyEl.value.trim(),message:messageEl.value.trim(),source:'vistaar-landing',ts:new Date().toISOString()};
-        try{
-            const res=await fetch(LEAD_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload),credentials:'include'});
-            if(!res.ok){let t='Failed to submit.';try{const j=await res.json();if(j?.message||j?.error)t=j.message||j.error}catch{} throw new Error(t+` (HTTP ${res.status})`)}
-            showToast('Thank you! We will reach out shortly.'); form.reset(); helper.textContent='Submitted successfully. We’ll contact you soon.';
-        }catch(err){console.error(err); showToast(err.message||'Something went wrong.','error'); helper.textContent='Submission failed. Please try again.'}
-        finally{submitBtn.disabled=false; submitBtn.textContent=original;}
+    /* ========= Contact Form ========= */
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.getElementById('contactForm');
+        const submitBtn = document.getElementById('submitBtn');
+        const helper = document.getElementById('formHelper');
+
+        const nameEl = document.getElementById('name');
+        const emailEl = document.getElementById('email');
+        const phoneEl = document.getElementById('phone');
+        const companyEl = document.getElementById('company');
+        const messageEl = document.getElementById('message');
+
+        const validEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+        const validPhone = (p) => /^[0-9+\-\s()]{7,}$/.test(p);
+
+        form.dataset.bound === '1' && form.removeEventListener('submit', window._leadSubmit);
+        window._leadSubmit = async (e) => {
+            e.preventDefault();
+            if (!nameEl.value || !emailEl.value || !phoneEl.value) { showToast('Please fill required fields: Name, Email, Phone.', 'warn'); return; }
+            if (!validEmail(emailEl.value)) { showToast('Please enter a valid email.', 'warn'); return; }
+            if (!validPhone(phoneEl.value)) { showToast('Please enter a valid phone.', 'warn'); return; }
+
+            submitBtn.disabled = true;
+            const original = submitBtn.textContent;
+            submitBtn.textContent = 'Submitting…';
+            helper && (helper.textContent = 'Sending your details securely…');
+
+            const payload = {
+                name: nameEl.value.trim(),
+                email: emailEl.value.trim(),
+                phone: phoneEl.value.trim(),
+                company: (companyEl?.value || '').trim(),
+                message: (messageEl?.value || '').trim(),
+                source: 'vistaar-landing',
+                ts: new Date().toISOString()
+            };
+
+            try {
+                console.log('[Lead] POST', LEAD_ENDPOINT, payload);
+                const res = await fetch(LEAD_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    credentials: 'include'
+                });
+                console.log('[Lead] response status:', res.status);
+                if (!res.ok) {
+                    let msg = `Failed to submit. (HTTP ${res.status})`;
+                    try { const j = await res.json(); if (j?.message || j?.error) msg = j.message || j.error; } catch {}
+                    throw new Error(msg);
+                }
+                showToast('Thank you! We will reach out shortly.');
+                form.reset();
+                helper && (helper.textContent = 'Submitted successfully. We’ll contact you soon.');
+            } catch (err) {
+                console.error('[Lead] error:', err);
+                showToast(err.message || 'Something went wrong.', 'error');
+                helper && (helper.textContent = 'Submission failed. Please try again.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = original;
+            }
+        };
+        form.addEventListener('submit', window._leadSubmit);
+        form.dataset.bound = '1';
     });
 
-    // ===== AUTH MODAL LOGIC =====
+    /* ========= AUTH MODAL & FLOWS ========= */
     const modal=document.getElementById('authModal');
     const openSignIn=document.getElementById('openSignIn');
     const openSignUp=document.getElementById('openSignUp');
@@ -360,23 +443,45 @@
     const signUpBtn=document.getElementById('signUpBtn');
     const csrfLoginHidden=document.getElementById('csrfLoginHidden');
 
+    // Forgot forms
+    const forgotUsernameForm = document.getElementById('forgotUsernameForm');
+    const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+    const openForgotUsername = document.getElementById('openForgotUsername');
+    const openForgotPassword = document.getElementById('openForgotPassword');
+    const backToSignIn1 = document.getElementById('backToSignIn1');
+    const backToSignIn2 = document.getElementById('backToSignIn2');
+
     const getCookie = (name) => document.cookie.split('; ').find(r=>r.startsWith(name+'='))?.split('=')[1];
 
     function openModal(tab='signin'){
         modal.classList.add('open');
         setTab(tab);
-        // Inject CSRF into login form (Spring Security XSRF-TOKEN cookie)
         const xsrf=getCookie('XSRF-TOKEN');
         if(xsrf){ csrfLoginHidden.value = decodeURIComponent(xsrf); }
     }
     function closeModal(){ modal.classList.remove('open'); }
     function setTab(which){
+        // hide all sub-forms first
+        formSignIn.style.display='none';
+        formSignUp.style.display='none';
+        forgotUsernameForm.style.display='none';
+        forgotPasswordForm.style.display='none';
+
+        tabSignIn.classList.remove('active');
+        tabSignUp.classList.remove('active');
+
         if(which==='signin'){
-            tabSignIn.classList.add('active'); tabSignUp.classList.remove('active');
-            formSignIn.style.display='grid'; formSignUp.style.display='none';
-        }else{
-            tabSignUp.classList.add('active'); tabSignIn.classList.remove('active');
-            formSignUp.style.display='grid'; formSignIn.style.display='none';
+            tabSignIn.classList.add('active');
+            formSignIn.style.display='grid';
+        }else if(which==='signup'){
+            tabSignUp.classList.add('active');
+            formSignUp.style.display='grid';
+        }else if(which==='forgot-username'){
+            tabSignIn.classList.add('active');
+            forgotUsernameForm.style.display='grid';
+        }else if(which==='forgot-password'){
+            tabSignIn.classList.add('active');
+            forgotPasswordForm.style.display='grid';
         }
     }
 
@@ -389,7 +494,12 @@
     document.getElementById('switchToSignUp').addEventListener('click',(e)=>{e.preventDefault();setTab('signup')});
     document.getElementById('switchToSignIn').addEventListener('click',(e)=>{e.preventDefault();setTab('signin')});
 
-    // SIGN UP (AJAX → /auth/signup)
+    openForgotUsername.addEventListener('click',()=>setTab('forgot-username'));
+    openForgotPassword.addEventListener('click',()=>setTab('forgot-password'));
+    backToSignIn1.addEventListener('click',()=>setTab('signin'));
+    backToSignIn2.addEventListener('click',()=>setTab('signin'));
+
+    // SIGN UP (AJAX)
     formSignUp.addEventListener('submit', async (e)=>{
         e.preventDefault();
         const fd = new FormData(formSignUp);
@@ -425,7 +535,64 @@
         }
     });
 
-    // Keyboard ESC to close modal
+    // FORGOT USERNAME (AJAX)
+    forgotUsernameForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(forgotUsernameForm);
+        const phone = (fd.get('phone')||'').toString().trim();
+        const recoveryEmail = (fd.get('recoveryEmail')||'').toString().trim();
+        if(!phone && !recoveryEmail){ showToast('Provide phone or alternate email.','warn'); return; }
+        const btn = document.getElementById('forgotUsernameBtn');
+        btn.disabled = true; const old = btn.textContent; btn.textContent = 'Sending…';
+        try{
+            const res = await fetch(FORGOT_USERNAME_ENDPOINT, {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/x-www-form-urlencoded',
+                    'X-XSRF-TOKEN': decodeURIComponent(getCookie('XSRF-TOKEN')||'')
+                },
+                body: new URLSearchParams({ phone, recoveryEmail }).toString(),
+                credentials:'include'
+            });
+            if(!res.ok) throw new Error(`Request failed (HTTP ${res.status})`);
+            showToast('If the info matches, your username has been sent.');
+            setTab('signin');
+        }catch(err){
+            console.error(err); showToast(err.message || 'Could not process request.','error');
+        }finally{
+            btn.disabled = false; btn.textContent = old;
+        }
+    });
+
+    // FORGOT PASSWORD (AJAX)
+    forgotPasswordForm.addEventListener('submit', async (e)=>{
+        e.preventDefault();
+        const fd = new FormData(forgotPasswordForm);
+        const username = (fd.get('username')||'').toString().trim();
+        if(!username){ showToast('Enter your username (email).','warn'); return; }
+        const btn = document.getElementById('forgotPasswordBtn');
+        btn.disabled = true; const old = btn.textContent; btn.textContent = 'Sending…';
+        try{
+            const res = await fetch(FORGOT_PASSWORD_ENDPOINT, {
+                method:'POST',
+                headers:{
+                    'Content-Type':'application/x-www-form-urlencoded',
+                    'X-XSRF-TOKEN': decodeURIComponent(getCookie('XSRF-TOKEN')||'')
+                },
+                body: new URLSearchParams({ username }).toString(),
+                credentials:'include'
+            });
+            if(!res.ok) throw new Error(`Request failed (HTTP ${res.status})`);
+            showToast('If the account exists, a reset link has been sent.');
+            setTab('signin');
+        }catch(err){
+            console.error(err); showToast(err.message || 'Could not send reset link.','error');
+        }finally{
+            btn.disabled = false; btn.textContent = old;
+        }
+    });
+
+    // ESC closes modal
     window.addEventListener('keydown',(e)=>{ if(e.key==='Escape' && modal.classList.contains('open')) closeModal(); });
 
     // Typing effect
