@@ -1,5 +1,6 @@
 // ===== Config =====
-const DEFAULT_API_BASE = "http://localhost:8082";
+const DEFAULT_API_BASE = window.location.origin;//"http://localhost:8082";
+console.log("Base Url : ",DEFAULT_API_BASE);
 const API_BASE = (window.API_BASE || DEFAULT_API_BASE).replace(/\/+$/,'');
 const API_CALL = "/api/qcall/playground/call";
 // If your API uses sessions/cookies, flip this to true
