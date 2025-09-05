@@ -2001,7 +2001,8 @@
                 // force HTTPS, same origin
                 window.location.assign(`${window.location.origin}/?logout`);
             } else {
-                alert('Logout failed: ' + res.status);
+                window.location.assign(`${window.location.origin}/?logout`);
+               // alert('Logout failed: ' + res.status);
             }
         } catch (e) {
             alert('Logout error: ' + e.message);
