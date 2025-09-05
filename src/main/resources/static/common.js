@@ -374,7 +374,40 @@ function speak(text, lang){
     const SHEET_NAME = "Sheet1"; // or gid=... form if you prefer
     const url = `https://docs.google.com/spreadsheets/d/1ccvrJetEMorEQBGLJaQo6pX9DnEcgDmoiZQ5UiE9MA8/edit?gid=0#gid=0`;
 
+function getCookie(name){
+    return document.cookie.split('; ').reduce((r, v) => {
+        const parts = v.split('=');
+        return parts[0] === name ? decodeURIComponent(parts.slice(1).join('=')) : r;
+    }, '');
+}
 
+/**
+ * Calls Spring Security logout.
+ * Requirements:
+ * - Security config uses CookieCsrfTokenRepository (so browser has XSRF-TOKEN cookie)
+ * - logoutUrl("/auth/logout") (default POST)
+ */
+async function doLogout() {
+    try {
+        const xsrf = getCookie('XSRF-TOKEN'); // from CookieCsrfTokenRepository.withHttpOnlyFalse()
+        const res = await fetch('/auth/logout', {
+            method: 'POST',
+            headers: xsrf ? { 'X-XSRF-TOKEN': xsrf } : {},
+            credentials: 'include'
+        });
+
+        if (res.ok) {
+            // Go back to public landing (adjust if your login page is different)
+            window.location.href = '/?logout';
+        } else {
+            const msg = await res.text().catch(()=>'');
+            console.log("Message : ",msg)
+            alert('Logout failed: ' + (msg || ('HTTP ' + res.status)));
+        }
+    } catch (e) {
+        alert('Logout error: ' + (e.message || e));
+    }
+}
 
 // Example usage after you fetched & parsed gviz JSON into `json`:
 

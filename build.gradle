@@ -35,6 +35,8 @@ dependencies {
     implementation "com.twelvemonkeys.imageio:imageio-jpeg:3.10.1"
     implementation "com.twelvemonkeys.imageio:imageio-tiff:3.10.1"
     implementation "com.twelvemonkeys.imageio:imageio-bmp:3.10.1"
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
     compileOnly 'org.projectlombok:lombok:1.18.32'
   //  annotationProcessor 'org.projectlombok:lombok:1.18.32'
   //  implementation "mysql:mysql-connector-j:8.4.0"   // or latest 8.x

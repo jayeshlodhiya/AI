@@ -250,6 +250,21 @@
         #imagePromotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
         #imagePromotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
         #imagePromotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+
+        .logout-btn {
+            margin-left: auto;              /* pushes it to the extreme right */
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: var(--radius);
+            background: var(--primary);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: var(--shadow);
+        }
+        .logout-btn:hover {
+            filter: brightness(1.05);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -285,6 +300,7 @@
             <span class="chip" title="Demo">AI Search</span>
             <button class="btn primary" onclick="handleSearch()" style="padding:8px 12px;">Search</button>
         </div>
+        <button class="btn primary logout-btn" onclick="doLogout()">Logout</button>
     </header>
 
     <!-- Main -->
@@ -1166,7 +1182,7 @@
         }
     }
     function loadDocumentDetails(){
-       // alert("Documet");
+        // alert("Documet");
         const iframe = document.getElementById('documentDetailsFrame');
         if (iframe && !iframe.src) {
             // absolute path so it works regardless of current route
