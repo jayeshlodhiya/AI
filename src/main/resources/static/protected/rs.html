@@ -1989,6 +1989,25 @@
         dock.style.display = willOpen ? 'block' : 'none';
         bell.style.display = 'none';
     }
+    const DEFAULT_API_BASE = window.location.origin;
+    console.log("Default base url : ",DEFAULT_API_BASE);
+    async function doLogout() {
+        try {
+            const url  = `${DEFAULT_API_BASE}/auth/logout`;
+            const res = await fetch(url, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (res.ok) {
+                // force HTTPS, same origin
+                window.location.assign(`${window.location.origin}/?logout`);
+            } else {
+                alert('Logout failed: ' + res.status);
+            }
+        } catch (e) {
+            alert('Logout error: ' + e.message);
+        }
+    }
 </script>
 <script src="/common.js"></script>
 <button id="actionBell" title="Action items" onclick="toggleActionDock()">📌 Actions</button>

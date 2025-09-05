@@ -387,24 +387,7 @@ function getCookie(name){
  * - Security config uses CookieCsrfTokenRepository (so browser has XSRF-TOKEN cookie)
  * - logoutUrl("/auth/logout") (default POST)
  */
-const DEFAULT_API_BASE = window.location.origin;
-async function doLogout() {
-    try {
-        const url  = `${DEFAULT_API_BASE}/auth/logout`;
-        const res = await fetch(url, {
-            method: 'POST',
-            credentials: 'include'
-        });
-        if (res.ok) {
-            // force HTTPS, same origin
-            window.location.assign(`${window.location.origin}/?logout`);
-        } else {
-            alert('Logout failed: ' + res.status);
-        }
-    } catch (e) {
-        alert('Logout error: ' + e.message);
-    }
-}
+
 
 // Example usage after you fetched & parsed gviz JSON into `json`:
 
