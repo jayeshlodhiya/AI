@@ -389,23 +389,18 @@ function getCookie(name){
  */
 async function doLogout() {
     try {
-        const xsrf = getCookie('XSRF-TOKEN'); // from CookieCsrfTokenRepository.withHttpOnlyFalse()
         const res = await fetch('/auth/logout', {
             method: 'POST',
-            headers: xsrf ? { 'X-XSRF-TOKEN': xsrf } : {},
             credentials: 'include'
         });
-
         if (res.ok) {
-            // Go back to public landing (adjust if your login page is different)
-            window.location.href = '/?logout';
+            // force HTTPS, same origin
+            window.location.assign(`${window.location.origin}/?logout`);
         } else {
-            const msg = await res.text().catch(()=>'');
-            console.log("Message : ",msg)
-            alert('Logout failed: ' + (msg || ('HTTP ' + res.status)));
+            alert('Logout failed: ' + res.status);
         }
     } catch (e) {
-        alert('Logout error: ' + (e.message || e));
+        alert('Logout error: ' + e.message);
     }
 }
 
