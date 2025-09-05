@@ -10,7 +10,26 @@ public class QCallPlaygroundRequest {
     private String email;
     private String assistantId;
     private List<String> phoneNumber; // e.g. ["+917350348860"]
-    private String dialerId;          // optional
+    private String dialerId;
+    private String description;// optional
+
+    public QCallPlaygroundRequest(String firstName, String lastName, String email, String assistantId, List<String> phoneNumber, String dialerId, String description) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.assistantId = assistantId;
+        this.phoneNumber = phoneNumber;
+        this.dialerId = dialerId;
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
 
     // getters/setters
 

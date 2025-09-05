@@ -6,7 +6,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.retailai.api.dto.ActionItem;
 import com.retailai.api.dto.ActionSource;
 import com.retailai.api.dto.ActionType;
+import com.retailai.model.ContactLead;
 import com.retailai.model.RagChunkNew;
+import com.retailai.repo.ContactRepo;
 import com.retailai.repo.RagChunkRepoNew;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -20,10 +22,12 @@ public class ActionService {
     private final RagChunkRepoNew ragRepo;          // your repo to fetch doc/chunks
     private final ObjectMapper om = new ObjectMapper();
     private final LlmClient llm;
+    private final ContactRepo contactRepo;
 
-    public ActionService(RagChunkRepoNew ragRepo, LlmClient llm) {
+    public ActionService(RagChunkRepoNew ragRepo, LlmClient llm, ContactRepo contactRepo) {
         this.ragRepo = ragRepo;
         this.llm = llm;
+        this.contactRepo = contactRepo;
     }
 
     public List<ActionItem> extractFromDoc(String tenantId, String docId) {
@@ -194,5 +198,10 @@ public class ActionService {
         // Call your existing OpenAI/other client; return raw JSON as string
         // IMPORTANT: use JSON mode / tool schema to force valid JSON.
         return llm.complete(prompt, "");
+    }
+
+
+    public void saveContact(ContactLead contactLead) {
+        contactRepo.save(contactLead);
     }
 }

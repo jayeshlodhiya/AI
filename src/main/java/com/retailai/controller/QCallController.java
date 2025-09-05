@@ -90,10 +90,10 @@ public class QCallController {
                 } else {
                     dto.call_transcribe = "-";
                 }
-                IngestResponse r1 = client.ingestText(new IngestTextRequest(
+                /*IngestResponse r1 = client.ingestText(new IngestTextRequest(
                         "Call logs", TextType.TRANSCRIPT.name(), dto.call_transcribe, List.of("call:"+dto.phone_number)
                 ));
-                System.out.println("Ingest Response " + r1.toString());
+                System.out.println("Ingest Response " + r1.toString());*/
                 // ... map other fields you need ...
                 System.out.println("call logs dto: " + dto.toString());
                 out.add(dto);
