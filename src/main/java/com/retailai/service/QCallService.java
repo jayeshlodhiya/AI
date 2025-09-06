@@ -74,7 +74,7 @@ public class QCallService {
     public Map<String, Object> startPlaygroundCall(QCallPlaygroundRequest req) {
         String url = baseUrl + "/playground/call";
         if(req.getAssistantId()==null) {
-            req.setAssistantId("4b1b5677-10e3-4005-a502-386f31b579d4");
+            req.setAssistantId("a87368ed-7a86-463f-a0c4-b4ee85f18b1c");//("4b1b5677-10e3-4005-a502-386f31b579d4");
         }
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

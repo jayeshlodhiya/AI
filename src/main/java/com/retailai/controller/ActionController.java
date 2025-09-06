@@ -20,7 +20,7 @@ import java.util.List;
 
 public class ActionController {
 
-    private static final String DEFAULT_ASSITANT_ID = "4b1b5677-10e3-4005-a502-386f31b579d4";
+    private static final String DEFAULT_ASSITANT_ID = "a87368ed-7a86-463f-a0c4-b4ee85f18b1c";//"4b1b5677-10e3-4005-a502-386f31b579d4";
     private final ActionService actionService;
     private final QCallService qCallService;
 

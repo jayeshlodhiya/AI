@@ -73,7 +73,7 @@ springdoc:
 
 qcall:
   base-url: https://api.qcall.ai/api/v1
-  api-key: 39c0a97e-befd-4476-aa5e-14699734cadd   # put the real key in env var QCALL_API_KEY
+  api-key: d8c5d468-ddcb-4d3c-ae36-b2745d7abea3 #39c0a97e-befd-4476-aa5e-14699734cadd   # put the real key in env var QCALL_API_KEY
 rag:
   api:
     baseUrl: https://ffbe2654905c.ngrok-free.app:8089 #http://localhost:8089
