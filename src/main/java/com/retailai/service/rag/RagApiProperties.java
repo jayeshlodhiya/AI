@@ -7,7 +7,7 @@ import java.time.Duration;
 
 @ConfigurationProperties(prefix = "rag.api")
 public class RagApiProperties {
-    private URI baseUrl = URI.create("https://ffbe2654905c.ngrok-free.app:8089");
+    private URI baseUrl = URI.create("https://6f92eabe3d26.ngrok-free.app");
     private Endpoints endpoints = new Endpoints();
     private Duration connectTimeout = Duration.ofSeconds(3);
     private Duration readTimeout = Duration.ofSeconds(10);

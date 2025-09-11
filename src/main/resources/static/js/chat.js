@@ -3,7 +3,7 @@
 // ===========================
 
 // ---- Config ----
-const DEFAULT_API_BASE = "http://localhost:8082";
+const DEFAULT_API_BASE = window.location.origin;//"http://localhost:8082";
 const API_BASE = (window.API_BASE || DEFAULT_API_BASE).replace(/\/+$/, "");
 // Primary chat endpoint (expects either streaming text/event-stream or a JSON { reply: "..."} )
 // Adjust if your backend differs:

@@ -3,54 +3,52 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Chat</title>
+    <title>Awaaz AI • Chat</title>
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+
     <style>
         :root{
-            --bg:#f7f7fb; --panel:#ffffff; --text:#0f172a; --muted:#6b7280;
-            --border:#e5e7eb; --radius:16px; --shadow:0 8px 24px rgba(16,24,40,.06);
+            --bg:#f6f7fb; --panel:#ffffff; --text:#0f172a; --muted:#667085; --border:#e5e7eb;
+            --radius:16px; --shadow:0 8px 24px rgba(16,24,40,.06);
             --brand:#6c4df6; --brand-strong:#5b3df0; --chip:#eef2ff;
-            --assistant:#0b1020; --bubble:#0f172a; --code:#0b1020; --code-bg:#0f172a; --code-border:#1f2937;
+            --assistant:#0b1020;
         }
         *{box-sizing:border-box}
         html,body{height:100%}
         body{
             margin:0; background:var(--bg); color:var(--text);
             font-family:Inter, system-ui, Segoe UI, Roboto, Arial;
-            display:grid; grid-template-columns:260px 1fr; min-height:100%;
+            display:grid; grid-template-columns:260px 1fr; min-height:100vh;
         }
 
-        /* ---------- Sidebar ---------- */
+        /* Sidebar */
         .sidebar{
             background:#fff; border-right:1px solid var(--border);
-            padding:14px; display:flex; flex-direction:column; gap:14px;
+            padding:16px; display:flex; flex-direction:column; gap:14px;
         }
-        .brand{font-weight:800; letter-spacing:.2px; display:flex; align-items:center; gap:8px}
-        .brand .dot{width:10px; height:10px; border-radius:50%; background:var(--brand)}
+        .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+        .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--brand)}
         .nav{display:grid; gap:6px}
-        .nav .group-title{font-size:12px; color:var(--muted); font-weight:800; margin-top:10px; text-transform:uppercase}
+        .nav .group-title{font-size:12px; color:var(--muted); font-weight:800; margin-top:6px; text-transform:uppercase}
         .nav a, .nav button{
             border:0; background:transparent; text-align:left; padding:10px 12px;
-            border-radius:10px; cursor:pointer; color:#111827; font-weight:600;
+            border-radius:12px; cursor:pointer; color:#111827; font-weight:600;
             display:flex; align-items:center; gap:10px;
         }
         .nav a:hover, .nav button:hover{background:#f3f4f6}
         .nav .active{background:#eef2ff; color:#3730a3}
         .caret{margin-left:auto; opacity:.7}
-
         .submenu{display:grid; gap:6px; margin-left:8px; padding-left:8px; border-left:2px solid #f1f5f9}
-        .submenu a{font-weight:600; color:#374151}
         .submenu.collapsed{display:none}
-
         .spacer{flex:1}
         .foot{color:var(--muted); font-size:12px}
 
-        /* ---------- Main area ---------- */
+        /* Main */
         .main{display:grid; grid-template-rows:auto 1fr auto; min-height:100vh;}
         .topbar{
             background:#fff; border-bottom:1px solid var(--border);
-            padding:10px 16px; display:flex; align-items:center; gap:10px; justify-content:space-between;
+            padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:10px;
         }
         .topbar .title{font-weight:800}
         .model-pill{background:var(--chip); color:#3730a3; padding:6px 10px; border-radius:999px; font-weight:800; font-size:12px}
@@ -60,44 +58,56 @@
         .btn.ghost{background:#f3f4f6}
         .btn:disabled{opacity:.6; cursor:not-allowed}
 
-        /* ---------- Chat stream ---------- */
+        /* Chat stream */
         .chat{
-            padding: 24px;
-            overflow:auto;
+            padding: 24px; overflow:auto; display:flex; flex-direction:column; gap:14px;
+        }
+        .container{max-width:980px; margin:0 auto; width:100%}
+
+        /* Stack messages vertically with spacing */
+        #chatMessages{
             display:flex; flex-direction:column; gap:14px;
         }
+
         .msg{
             display:grid; grid-template-columns:40px 1fr; gap:12px;
             background:#fff; border:1px solid var(--border); border-radius:var(--radius);
             padding:14px; box-shadow:var(--shadow);
+            max-width:780px;
         }
-        .msg.assistant{background:#0b1020; border-color:#101828}
-        .msg.assistant .content{color:#e5e7eb}
         .avatar{
-            width:40px; height:40px; border-radius:50%; background:#e5e7eb; display:flex; align-items:center; justify-content:center; font-weight:800
+            width:40px;height:40px;border-radius:50%;background:#e5e7eb;
+            display:flex;align-items:center;justify-content:center;font-weight:800
         }
-        .avatar.assistant{background:#1f2937; color:#c7d2fe}
         .role{font-weight:800; font-size:12px; color:var(--muted); margin-bottom:4px}
+        .content{white-space:pre-wrap; line-height:1.55}
+
+        /* Assistant bubble (left) */
+        .msg.assistant{align-self:flex-start; background:var(--assistant); border-color:#101828}
+        .msg.assistant .avatar{background:#1f2937; color:#c7d2fe}
         .msg.assistant .role{color:#a5b4fc}
-        .content{white-space:pre-wrap; line-height:1.5}
+        .msg.assistant .content{color:#e5e7eb}
+
+        /* User bubble (right) */
+        .msg.user{align-self:flex-end; background:#eef2ff; border-color:#c7d2fe; grid-template-columns:1fr 40px}
+        .msg.user .avatar{grid-column:2}
+        .msg.user .role, .msg.user .content{text-align:right}
+
+        /* Code styles (if backend returns fenced code but you render as text) */
         .content code{
-            font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+            font-family: ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
             background:#0f172a; color:#e2e8f0; padding:2px 6px; border-radius:6px;
         }
-        pre.codeblock{
-            background:#0f172a; color:#e2e8f0; padding:14px; border-radius:12px; overflow:auto; border:1px solid #1f2937;
-        }
+        pre.codeblock{background:#0f172a;color:#e2e8f0;padding:14px;border-radius:12px;overflow:auto;border:1px solid #1f2937}
 
+        /* Typing */
         .typing{display:flex; gap:6px; align-items:center; color:#94a3b8; font-size:13px}
         .dot1,.dot2,.dot3{width:6px;height:6px;border-radius:999px;background:#c7d2fe;animation:b 1.4s infinite}
         .dot2{animation-delay:.15s}.dot3{animation-delay:.3s}
         @keyframes b{0%,80%,100%{opacity:.2} 40%{opacity:1}}
 
-        /* ---------- Composer ---------- */
-        .composer-wrap{
-            background:linear-gradient(180deg, rgba(247,247,251,0) 0%, rgba(247,247,251,1) 50%);
-            padding:16px;
-        }
+        /* Composer */
+        .composer-wrap{background:linear-gradient(180deg, rgba(247,247,251,0) 0%, rgba(247,247,251,1) 50%); padding:16px;}
         .composer{
             background:#fff; border:1px solid var(--border); border-radius:16px; padding:10px; box-shadow:var(--shadow);
             display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end;
@@ -109,27 +119,32 @@
         .hint{font-size:12px; color:var(--muted); margin-top:6px}
         .hidden{display:none}
 
-        /* badges / small pills */
-        .pill{background:#eef2ff; color:#3730a3; padding:4px 8px; border-radius:999px; font-weight:800; font-size:11px}
+        /* Chips under answers — vertical stack */
+        .answer-chips{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+        .answer-chips .chip{
+            display:block; background:#eef2ff; color:#3730a3;
+            padding:6px 10px; border-radius:999px; font-size:13px; font-weight:600; width:fit-content;
+        }
 
-        /* container widths */
-        .container{max-width:980px; margin:0 auto; width:100%}
+        /* Small screens */
+        @media (max-width: 720px){
+            body{grid-template-columns:1fr}
+            .sidebar{display:none}
+            .msg{max-width:100%}
+        }
     </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- Sidebar -->
 <aside class="sidebar">
-    <div class="brand"><span class="dot"></span> <span>Awaaz AI</span></div>
+    <div class="brand"><span class="dot"></span><span>Awaaz AI</span></div>
 
     <nav class="nav">
         <div class="group-title">Main</div>
         <a href="ai-call.html">AI Call Assistants</a>
 
-        <button id="agentCallsToggler">
-            AI Agent Calls
-            <span class="caret">▸</span>
-        </button>
+        <button id="agentCallsToggler">AI Agent Calls <span class="caret">▸</span></button>
         <div id="agentCallsMenu" class="submenu collapsed">
             <a href="call-history.html">Call History</a>
             <a href="call-details.html">Call Details</a>
@@ -140,12 +155,12 @@
     </nav>
 
     <div class="spacer"></div>
-    <div class="foot">v1.0 • <span class="pill">Beta</span></div>
+    <div class="foot">v1.0 • <span style="background:#eef2ff;color:#3730a3;padding:3px 8px;border-radius:999px;font-weight:800;font-size:11px">Beta</span></div>
 </aside>
 
-<!-- MAIN -->
+<!-- Main -->
 <main class="main">
-    <!-- topbar -->
+    <!-- Topbar -->
     <div class="topbar">
         <div class="title">Chat</div>
         <div class="controls">
@@ -154,31 +169,29 @@
         </div>
     </div>
 
-    <!-- chat stream -->
+    <!-- Chat Stream -->
     <div class="chat">
         <div class="container" id="chatMessages">
-            <!-- messages will be appended here -->
-
-            <!-- welcome block -->
+            <!-- Welcome message -->
             <div class="msg assistant">
-                <div class="avatar assistant">🤖</div>
+                <div class="avatar">🤖</div>
                 <div>
                     <div class="role">Assistant</div>
                     <div class="content">
-                        Hi! Ask me anything. I can reference your call transcripts and assistants if you’ve connected them.
+                        Hello! Ask me anything from your uploaded documents.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- typing indicator -->
+        <!-- Typing -->
         <div class="container typing hidden" id="typing">
             <span class="dot1"></span><span class="dot2"></span><span class="dot3"></span>
             <span>Assistant is typing…</span>
         </div>
     </div>
 
-    <!-- composer -->
+    <!-- Composer -->
     <div class="composer-wrap">
         <div class="container">
             <form id="composer" class="composer">
@@ -193,9 +206,9 @@
     </div>
 </main>
 
-<!-- message templates (cloned by js/chat.js) -->
+<!-- Templates (consumed by js/chat.js) -->
 <template id="tplUserMsg">
-    <div class="msg">
+    <div class="msg user">
         <div class="avatar">🧑</div>
         <div>
             <div class="role">You</div>
@@ -206,19 +219,24 @@
 
 <template id="tplAssistantMsg">
     <div class="msg assistant">
-        <div class="avatar assistant">🤖</div>
+        <div class="avatar">🤖</div>
         <div>
             <div class="role">Assistant</div>
             <div class="content"></div>
+            <!-- Optional: if your backend/JS later injects chips, this container styles them vertically -->
+            <!-- <div class="answer-chips">
+              <div class="chip">Example Chip A</div>
+              <div class="chip">Example Chip B</div>
+            </div> -->
         </div>
     </div>
 </template>
 
-<!-- lightweight toast -->
+<!-- Toast -->
 <div id="toast" style="position:fixed;right:16px;bottom:16px;display:grid;gap:10px;z-index:50"></div>
 
 <script>
-    // tiny sidebar toggler here (JS app logic stays in js/chat.js)
+    // Sidebar toggler (kept minimal, JS app logic remains in js/chat.js)
     document.getElementById('agentCallsToggler')?.addEventListener('click', () => {
         const sub = document.getElementById('agentCallsMenu');
         const caret = document.querySelector('#agentCallsToggler .caret');

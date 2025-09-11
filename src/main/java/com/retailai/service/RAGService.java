@@ -33,7 +33,7 @@ public class RAGService {
   @Transactional
   public int index(String tenantId, String docType, String docId, String text, java.util.List<String> tags) {
 
-   if(!repo.existsByDocId(docId)){
+
        RagChunk c = new RagChunk();
        c.setTenantId(tenantId);
        c.setDocType(docType);
@@ -42,8 +42,8 @@ public class RAGService {
        c.setTags(tags == null ? null : String.join(",", tags));
        repo.save(c);
        return 1;
-   }
-    return 0;
+
+
   }
 
   @Transactional

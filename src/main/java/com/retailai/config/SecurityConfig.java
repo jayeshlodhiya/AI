@@ -44,23 +44,23 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/css/**", "/js/**", "/images/**", "/fonts/**", "/favicon.ico").permitAll()
                         // Auth endpoints are public
                         .requestMatchers("/auth/**").permitAll()
-                        // Allow leads (and other API) without auth – or narrow to just the exact endpoint:
+                        // Public API endpoint(s) — narrow if needed
                         .requestMatchers(HttpMethod.POST, "/api/actions/leads").permitAll()
                         .requestMatchers("/api/**").permitAll()
-                        // Everything else requires login (e.g., rs.html)
+                        // Everything else requires login
                         .anyRequest().authenticated()
                 )
 
                 .formLogin(form -> form
-                        .loginPage("/")                 // your index hosts the modal
+                        .loginPage("/")                 // index hosts the modal/login
                         .loginProcessingUrl("/auth/login")
-                        .defaultSuccessUrl("/rs.html", true)
+                        .defaultSuccessUrl("/home.html", true)
                         .failureUrl("/?error")
                         .permitAll()
                 )
 
                 .logout(logout -> logout
-                        .logoutUrl("/auth/logout")      // expect POST (default); you can allow GET via requestMatcher if needed
+                        .logoutUrl("/auth/logout")      // POST by default
                         .logoutSuccessUrl("/?logout")
                         .deleteCookies("JSESSIONID")
                         .invalidateHttpSession(true)
@@ -70,18 +70,34 @@ public class SecurityConfig {
                 // Send CSRF cookie after framework sets token
                 .addFilterAfter(new CsrfCookieFilter(), org.springframework.security.web.csrf.CsrfFilter.class)
 
-                // Headers: allow same-origin iframes and a single-line CSP (avoid CR/LF)
                 .headers(h -> h
                         .frameOptions(f -> f.sameOrigin())
                         .contentSecurityPolicy(csp -> csp
-                                .policyDirectives("default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; frame-ancestors 'self'")
+                                // SINGLE LINE (no CR/LF) — includes Google Fonts + placehold.co
+                                .policyDirectives(
+                                        "default-src 'self'; " +
+                                                "base-uri 'self'; " +
+                                                "object-src 'none'; " +
+                                                // Inline scripts/styles are kept because your pages use them.
+                                                "script-src 'self' 'unsafe-inline'; " +
+                                                "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                                "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+                                                // Allow Google Fonts files and data: for self-hosted/base64 fonts
+                                                "font-src 'self' https://fonts.gstatic.com data:; " +
+                                                // Allow data: images and placeholder CDN
+                                                "img-src 'self' data: https://placehold.co; " +
+                                                // XHR/fetch targets (same-origin API). Add more if you call other hosts.
+                                                "connect-src 'self'; " +
+                                                // Prevent this app from being framed by other origins
+                                                "frame-ancestors 'self'"
+                                )
                         )
                 );
 
         return http.build();
     }
 
-    // Optional: CORS (helpful during dev if you ever split origins)
+    // Optional: CORS (useful during dev if you hit from other origins)
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
