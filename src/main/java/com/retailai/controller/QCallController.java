@@ -64,11 +64,12 @@ public class QCallController {
     @GetMapping("/playgroundHistory")
     public ResponseEntity<List<CallLogDTO>> playgroundHistory() throws Exception {
         List<Map<String,Object>> callLogs = qCallService.listPlayground();
-        System.out.println("call logs: " + callLogs.size());
+       // System.out.println("call logs: " + callLogs.size());
 
 
         List<CallLogDTO> out = new ArrayList<>(callLogs.size());
         for (Map<String, Object> row : callLogs) {
+            System.out.println("row: " + row.toString());
             try {
                 System.out.println(mapper.writeValueAsString(row));
                 CallLogDTO dto = new CallLogDTO();
@@ -79,21 +80,27 @@ public class QCallController {
                 dto.call_sentiment = row.get("call_sentiment");
                 dto.created_at = asString(row.get("created_at"));
                 dto.assistant_name = asString(row.get("assistant_name"));
+
                 if (row.get("recording_url") != null) {
+
                     dto.recording_url = asString(row.get("recording_url"));
                 }
 
                 // call.setCallTranscribe(new ObjectMapper().writeValueAsString(transcript));
                 if (row.get("call_transcribe") != null) {
                     dto.call_transcribe = formatTranscriptMore(row.get("call_transcribe").toString());//formatTranscript(row.get("call_transcribe").toString()));// toTurns(row.get("call_transcribe"), mapper); // normalize here
-                    textInjestService.injestText(dto.call_transcribe, TextType.TRANSCRIPT, dto.id);
+                   // textInjestService.injestText(dto.call_transcribe, TextType.TRANSCRIPT, dto.id);
                 } else {
                     dto.call_transcribe = "-";
                 }
-                IngestResponse r1 = client.ingestText(new IngestTextRequest(
-                        "Call logs", TextType.TRANSCRIPT.name(), dto.call_transcribe, List.of("call:"+dto.phone_number)
-                ));
-                System.out.println("Ingest Response " + r1.toString());
+                try {
+                    IngestResponse r1 = client.ingestText(new IngestTextRequest(
+                            "Call logs", TextType.TRANSCRIPT.name(), dto.call_transcribe, List.of("call:" + dto.phone_number)
+                    ));
+                    System.out.println("Ingest Response " + r1.toString());
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                }
                 // ... map other fields you need ...
                 System.out.println("call logs dto: " + dto.toString());
                 out.add(dto);

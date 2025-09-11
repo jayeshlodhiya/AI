@@ -457,8 +457,12 @@ function openCallDetail(record, opts = { autoplay: false }) {
         wrap.style.display = 'grid';
         wrap.style.gap = '8px';
         const audio = document.createElement('audio');
+        audio.crossOrigin = 'anonymous';
+
         audio.controls = true;
-        audio.src = record.recording_url; // prefix with API_BASE if needed
+        console.log("Recording url : ", record.recording_url);
+        audio.src = "https://precallai.s3.ap-south-1.amazonaws.com/"+record.recording_url; // prefix with API_BASE if needed
+
         audio.id = 'callAudioPlayer';
         audio.style.width = '100%';
         const link = document.createElement('a');
