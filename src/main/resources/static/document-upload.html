@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<style>
+    :root {
+        --bg: #f4f6f8;
+        --panel: #ffffff;
+        --muted: #8a9099;
+        --text: #0f172a;
+        --primary: #2563eb;
+        --green: #059669;
+        --purple: #7c3aed;
+        --border: #e5e7eb;
+        --hot: #fecaca;
+        --warm: #fde68a;
+        --cold: #bfdbfe;
+        --chip: #eef2ff;
+        --radius: 16px;
+        --shadow: 0 6px 18px rgba(2,6,23,.08);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+        margin: 0; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+        color: var(--text); background: var(--bg);
+    }
+    a { color: inherit; text-decoration: none; }
+    .app {
+        display: grid;
+        grid-template-columns: 260px 1fr;   /* no third column */
+        grid-template-rows: 64px 1fr;
+        grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar { grid-area: sidebar; background: var(--panel); padding: 18px; border-right: 1px solid var(--border); box-shadow: var(--shadow); z-index: 2; }
+    .brand { font-weight: 800; letter-spacing:.2px; margin: 4px 0 18px; }
+    .nav { list-style: none; padding: 0; margin: 0; }
+    .nav li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; color:#1f2937; cursor: pointer; transition: all 0.2s ease; }
+    .nav li.active, .nav li:hover { background: #f1f5ff; color: var(--primary); transform: translateX(4px); }
+    .hamburger { display:none; border:0; background: transparent; font-size: 22px; }
+
+    /* Topbar */
+    .topbar { grid-area: topbar; display:flex; align-items:center; gap:12px; padding: 12px 16px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top:0; z-index:1; }
+    .search { display:flex; align-items:center; gap:10px; background:#f8fafc; padding: 10px 14px; border:1px solid var(--border); border-radius: 12px; width: 100%; max-width: 740px; }
+    .search input { flex:1; border:0; outline: none; background: transparent; font-size: 15px; }
+    .chip { background: var(--chip); color:#3730a3; padding:6px 10px; border-radius: 999px; font-size: 12px; font-weight:600; }
+
+    /* Main */
+    .main {
+        grid-area: main;
+        overflow: auto;
+        padding: 18px;
+        height: 100%;
+    }
+    .grid { display:grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+    .card { background: var(--panel); border:1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .card .header { padding: 14px 16px; border-bottom:1px solid var(--border); font-weight:700; }
+    .card .body { padding: 14px 16px; }
+
+    /* Lead scoring summary */
+    .score-row { display:flex; gap: 14px; }
+    .score { flex:1; padding: 14px; border-radius: 14px; display:flex; align-items:center; justify-content: space-between; font-weight: 700; }
+    .score small { font-weight: 600; color:#334155; }
+    .score.hot { background: var(--hot); }
+    .score.warm { background: var(--warm); }
+    .score.cold { background: var(--cold); }
+
+    /* Table */
+    table { width:100%; border-collapse: collapse; }
+    th, td { text-align:left; padding: 12px 10px; border-bottom: 1px solid var(--border);}
+    thead th { font-size: 13px; color:#6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; }
+    tbody tr:hover { background:#f9fafb; }
+    .badge { padding:4px 10px; border-radius: 999px; font-weight:700; font-size: 12px; }
+    .badge.hot { background: #fee2e2; color: #b91c1c; }
+    .badge.warm { background: #fef3c7; color: #b45309; }
+    .badge.cold { background: #dbeafe; color: #1d4ed8; }
+    .badge.low { background: #fee2e2; color: #b91c1c; }
+    .badge.medium { background: #fef3c7; color: #b45309; }
+    .badge.in-stock { background: #dbeafe; color: #1d4ed8; }
+    .badge.high { background: #fecaca; color: #dc2626; }
+
+    /* Quick actions */
+    .actions { display:grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .btn { border:0; padding: 12px 14px; border-radius: 12px; font-weight: 700; cursor: pointer; box-shadow: var(--shadow); display:flex; align-items:center; justify-content:center; gap:8px; }
+    .btn.primary { background: var(--primary); color:white; }
+    .btn.green { background: var(--green); color:white; }
+    .btn.purple { background: var(--purple); color:white; }
+    .btn:active { transform: translateY(1px); }
+
+    /* Right panel - Assistant */
+    .right { grid-area: right; background: var(--panel); border-left: 1px solid var(--border); box-shadow: var(--shadow); display:flex; flex-direction: column; }
+    .assistant { display:flex; flex-direction: column; height: 100%; }
+    .chat { flex:1; overflow: auto; padding: 16px; }
+    .msg { max-width: 85%; padding: 10px 12px; border-radius: 12px; margin: 6px 0; display:inline-flex; align-items:flex-start; line-height:1.35; white-space:pre-wrap; }
+    .msg.user { background: #e2e8f0; align-self:flex-end; }
+    .msg.ai { background: #e0ebff; color:#0c3b8a; }
+    .composer { display:flex; gap:8px; padding: 12px; border-top:1px solid var(--border); align-items:center; }
+    .composer input { flex:1; border:1px solid var(--border); border-radius: 12px; padding: 10px 12px; }
+    .toggle { display:flex; align-items:center; gap:8px; font-size:12px; color:#475569; user-select:none; }
+
+    /* Modal */
+    .modal { position: fixed; inset: 0; background: rgba(15,23,42,.35); display:none; align-items:center; justify-content:center; padding: 18px; }
+    .modal .dialog { background: var(--panel); border-radius: var(--radius); width: 100%; max-width: 460px; box-shadow: var(--shadow); }
+    .modal .dialog .header { padding: 14px 16px; border-bottom:1px solid var(--border); font-weight: 800; }
+    .modal .dialog .body { padding: 16px; display: grid; gap: 12px; }
+    .modal .dialog .footer { padding: 14px 16px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; gap:10px; }
+
+    /* Content Sections */
+    .content-section { display: none; }
+    .content-section.active { display: block; }
+    .content-section .card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .content-section .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(2,6,23,0.12); }
+    .content-section table { border-radius: 8px; overflow: hidden; }
+    .content-section tbody tr { transition: background-color 0.2s ease; }
+    .content-section tbody tr:hover { background-color: #f8fafc; }
+    .content-section .btn { transition: all 0.2s ease; }
+    .content-section .btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .content-section input[type="file"] { cursor: pointer; }
+    .content-section .file-upload-area { transition: all 0.2s ease; }
+    .content-section .file-upload-area:hover { border-color: var(--primary); background: #f8fafc; }
+    .content-section .file-upload-area.dragover { border-color: var(--primary); background: #e0ebff; }
+    .content-section #documentStats > div { transition: all 0.2s ease; }
+    .content-section #documentStats > div:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+        .app { grid-template-columns: 220px 1fr; grid-template-areas:
+        "sidebar topbar"
+        "sidebar main";
+        }
+        .right { display:none; }
+    }
+    @media (max-width: 840px) {
+        .app { grid-template-columns: 1fr; grid-template-rows: 56px auto; grid-template-areas:
+        "topbar"
+        "main"; }
+        .sidebar { position: fixed; inset: 0 auto 0 0; width: 280px; transform: translateX(-100%); transition: transform .25s ease; }
+        .sidebar.open { transform: translateX(0); }
+        .hamburger { display:block; }
+        .grid { grid-template-columns: 1fr; }
+        .actions { grid-template-columns: 1fr; }
+    }
+    mark { background: #fff3b0; padding:0 2px; border-radius:2px; }
+    /* typing / thinking indicator */
+    .spinner {
+        width: 12px; height: 12px;
+        border: 2px solid #93c5fd;          /* light blue */
+        border-top-color: transparent;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+        animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .thinking { display: inline-flex; align-items: center; gap: 4px; }
+    /* Call Agents card should stretch, and iframe should fill it */
+    #callAgentsSection {
+        height: 100%;
+    }
+
+    /* Card takes full height */
+    #callAgentsSection .card {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    /* Body expands under header */
+    #callAgentsSection .card .body {
+        flex: 1;
+        display: flex;
+        padding: 0;
+        overflow: hidden; /* remove scrollbars around iframe */
+    }
+
+    /* Iframe stretches completely */
+    #callAgentsFrame {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 0 0 var(--radius) var(--radius);
+    }
+    /* Sticky Notes */
+    #actionNotesDock {
+        position: fixed; right: 12px; bottom: 12px; width: 360px; max-height: 60vh; overflow:auto;
+        display:none; z-index: 50;
+    }
+    .note {
+        background: #fffad1; border: 1px solid #f59e0b; color:#4b5563;
+        border-radius: 10px; padding: 10px 10px 12px; margin-top: 10px;
+        box-shadow: 0 6px 18px rgba(2,6,23,.12); position: relative;
+    }
+    .note .tag { font-size: 11px; font-weight: 800; color:#92400e; background:#fde68a; padding:2px 6px; border-radius:999px; }
+    .note .title { font-weight: 800; margin: 6px 0 4px; color:#78350f; }
+    .note .meta { font-size: 12px; color:#6b7280; }
+    .note .btns { display:flex; gap:8px; margin-top:10px; }
+    .note .btn-ghost { background:#fff; border:1px solid #e5e7eb; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .note .btn-primary { background:#2563eb; color:#fff; border:0; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .note .done { color:#059669; font-weight:700; }
+    #actionBell {
+        position: fixed; right: 12px; bottom: 12px; z-index: 51; display:none;
+        background:#111827; color:#fff; border:0; border-radius:999px; padding:10px 12px; box-shadow: var(--shadow);
+    }
+
+
+
+
+
+    /* Promotions sizing */
+    #promotionsSection { height: 100%; }
+    #promotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+    #promotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+    #promotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+    #micBtn.listening { background:#fee2e2; color:#b91c1c; }
+
+    #promotionsSection { height: 100%; }
+    #promotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+    #promotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+    #promotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+    #promotionsSection { height: 100%; }
+    #promotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+    #promotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+    #promotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+    #micBtn.listening { background:#fee2e2; color:#b91c1c; }
+
+    #chatSection { height: 100%; }
+    #chatSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+    #chatSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+    #chatFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+
+
+
+
+    #documentDetailsSection { height: 100%; }
+    #documentDetailsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+    #documentDetailsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+    #documentDetailsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+    #micBtn.listening { background:#fee2e2; color:#b91c1c; }
+
+    #imagePromotionsSection { height: 100%; }
+    #imagePromotionsSection .card { display:flex; flex-direction:column; height:100%; min-height:70vh; }
+    #imagePromotionsSection .card .body { flex:1; display:flex; padding:0; overflow:hidden; }
+    #imagePromotionsFrame { width:100%; height:100%; border:0; border-radius:0 0 var(--radius) var(--radius); }
+
+    .logout-btn {
+        margin-left: auto;              /* pushes it to the extreme right */
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: var(--radius);
+        background: var(--primary);
+        color: #fff;
+        font-weight: 600;
+        box-shadow: var(--shadow);
+    }
+    .logout-btn:hover {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+    }
+</style>
+<body>
+<div id="documentsSection" class="content-section">
+    <div class="grid">
+        <!-- Document Upload -->
+        <section class="card">
+            <div class="header">Document Upload & Processing</div>
+            <div class="body">
+                <div style="display:grid; gap:16px;">
+                    <div style="background:#f8fafc; padding:16px; border-radius:8px; text-align:center;">
+                        <div style="font-size:48px; margin-bottom:8px;">📄</div>
+                        <div style="font-weight:600; margin-bottom:4px;">Upload Documents</div>
+                        <div style="color:#6b7280; font-size:14px;">PDF & Word will be processed and stored as RAG chunks</div>
+                    </div>
+
+                    <div style="display:grid; gap:12px;">
+                        <div>
+                            <label style="display:block; margin-bottom:8px; font-weight:600;">Document Type</label>
+                            <select id="docType" style="width:100%; padding:8px 12px; border:1px solid var(--border); border-radius:8px; outline:none;">
+                                <option value="policy">Policy Documents</option>
+                                <option value="catalog">Product Catalog</option>
+                                <option value="brochure">Project Brochures</option>
+                                <option value="contract">Contracts & Agreements</option>
+                                <option value="manual">User Manuals</option>
+                                <option value="other">Other Documents</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label style="display:block; margin-bottom:8px; font-weight:600;">Upload Files</label>
+                            <div id="dropZone" class="file-upload-area"
+                                 style="border:2px dashed var(--border); border-radius:8px; padding:20px; text-align:center; background:#fafafa;"
+                                 ondragover="handleDragOver(event)" ondrop="handleDrop(event)" ondragleave="handleDragLeave(event)">
+                                <input type="file" id="fileUpload" multiple
+                                       accept=".pdf,.jpg,.jpeg,.gif,.bmp,.tiff,.doc,.docx,.xls,.xlsx,.txt"
+                                       style="display:none;" onchange="handleFileSelect(event)">
+                                <div style="margin-bottom:12px;">
+                                    <span style="font-size:24px;">📁</span>
+                                </div>
+                                <div style="margin-bottom:16px;">
+                                    <strong>Drop files here or click to browse</strong>
+                                    <div style="color:#6b7280; font-size:14px; margin-top:4px;">
+                                        Supports PDF, Word (DOC/DOCX), JPG, JPEG, GIF, BMP, TIFF,TXT
+                                    </div>
+                                </div>
+                                <button class="btn primary" onclick="document.getElementById('fileUpload').click()">Choose Files</button>
+                            </div>
+                        </div>
+
+                        <div id="selectedFiles" style="display:none;">
+                            <label style="display:block; margin-bottom:8px; font-weight:600;">Selected Files</label>
+                            <div id="fileList" style="background:#f8fafc; padding:12px; border-radius:8px;"></div>
+                        </div>
+
+                        <button id="uploadBtn" class="btn green" onclick="uploadDocuments()" style="display:none;">🚀 Process & Upload Documents</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Document Management -->
+        <section class="card">
+            <div class="header">Document Management</div>
+            <div class="body">
+                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                    <input type="text" id="docSearch" placeholder="Search documents..." style="flex:1; padding:8px 12px; border:1px solid var(--border); border-radius:8px; outline:none;">
+                    <button class="btn primary" onclick="searchDocuments()">🔍 Search</button>
+                </div>
+
+                <div id="documentStats" style="display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;">
+                    <div style="background:#fee2e2; padding:12px; border-radius:8px; text-align:center;">
+                        <div style="font-size:20px; font-weight:600; color:#dc2626;">0</div>
+                        <div style="font-size:12px; color:#dc2626;">Total Documents</div>
+                    </div>
+                    <div style="background:#fef3c7; padding:12px; border-radius:8px; text-align:center;">
+                        <div style="font-size:20px; font-weight:600; color:#b45309;">0</div>
+                        <div style="font-size:12px; color:#b45309;">RAG Chunks</div>
+                    </div>
+                    <div style="background:#dbeafe; padding:12px; border-radius:8px; text-align:center;">
+                        <div style="font-size:20px; font-weight:600; color:#1d4ed8;">0</div>
+                        <div style="font-size:12px; color:#1d4ed8;">Searchable Content</div>
+                    </div>
+                </div>
+
+                <div id="documentList">
+                    <div style="color:#6b7280; text-align:center; padding:20px;">
+                        <div style="font-size:24px; margin-bottom:8px;">📚</div>
+                        <div>No documents uploaded yet</div>
+                        <div style="font-size:12px; margin-top:8px;">Upload your first document to get started</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Upload Progress Modal -->
+    <div class="modal" id="uploadModal" aria-hidden="true" role="dialog">
+        <div class="dialog">
+            <div class="header">Processing Documents</div>
+            <div class="body">
+                <div id="uploadProgress" style="text-align:center;">
+                    <div style="font-size:48px; margin-bottom:16px;">⏳</div>
+                    <div style="margin-bottom:16px;">Processing your documents...</div>
+                    <div id="progressText">Initializing...</div>
+                    <div style="margin-top:16px;">
+                        <div style="background:#e5e7eb; border-radius:8px; height:8px; overflow:hidden;">
+                            <div id="progressBar" style="background:var(--primary); height:100%; width:0%; transition:width 0.3s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+                <button class="btn" onclick="closeUploadModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script src="common.js"></script>
+<script src="js/rsjs.js"></script>
+
+</html>

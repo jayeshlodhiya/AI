@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>User Account Settings</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Optional: <meta name="api-base" content="http://localhost:8089"> -->
+    <style>
+        :root{--bg:#0b1020;--card:#12182a;--muted:#a9b0c6;--text:#e7ecff;--accent:#5b8cff;--ok:#17c964;--warn:#f5a524;--err:#f31260;--border:#1f2740}
+        *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica Neue,Arial,Noto Sans,Apple Color Emoji,Segoe UI Emoji;background:var(--bg);color:var(--text)}
+        .container{max-width:920px;margin:48px auto;padding:0 20px}h1{font-size:1.8rem;margin:0 0 24px;letter-spacing:.2px}
+        .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:24px}.card{grid-column:span 12;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px}
+        @media (min-width:840px){.card.half{grid-column:span 6}}.card h2{font-size:1.1rem;margin:0 0 12px}.desc{color:var(--muted);font-size:.95rem;margin:0 0 16px}
+        .field{margin:14px 0}.label{display:inline-block;margin-bottom:6px;font-size:.95rem;color:var(--muted)}.row{display:flex;gap:10px;align-items:center}
+        input[type="password"],input[type="text"]{width:100%;padding:12px 14px;background:#0e1528;border:1px solid var(--border);border-radius:10px;outline:none;color:var(--text)}
+        input[type="password"]:focus,input[type="text"]:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in oklab,var(--accent) 25%,transparent)}
+        .btn{appearance:none;border:1px solid transparent;background:var(--accent);color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+        .btn.secondary{background:transparent;border-color:var(--border);color:var(--text)}.help{font-size:.85rem;color:var(--muted);margin-top:6px}.status{margin-top:12px;font-size:.92rem}
+        .ok{color:var(--ok)}.warn{color:var(--warn)}.err{color:var(--err)}.meter{height:8px;background:#10172a;border:1px solid var(--border);border-radius:999px;overflow:hidden;margin-top:8px}
+        .meter>div{height:100%;width:0%;background:var(--err);transition:width .25s ease,background .25s ease}.right{margin-left:auto}.small{font-size:.85rem;color:var(--muted)}.toggle{cursor:pointer;user-select:none}
+        .errlist{margin:.25rem 0 0 .25rem;padding-left:1rem;color:var(--err);font-size:.85rem}
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Account Settings</h1>
+    <div class="card" style="margin-bottom:16px;">
+        <div class="row" style="justify-content:space-between;align-items:center;">
+            <div>
+                <div class="small" style="opacity:.8;">Signed in as</div>
+                <div id="userName" style="font-weight:600;"></div>
+                <div id="userEmail" class="small"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid">
+        <!-- Update Password -->
+        <section class="card half" id="password-card">
+            <h2>Update Password</h2>
+            <p class="desc">Choose a strong password you haven’t used elsewhere.</p>
+            <form id="passwordForm" novalidate>
+                <div class="field">
+                    <label class="label" for="currentPassword">Current password</label>
+                    <div class="row">
+                        <input type="password" id="currentPassword" autocomplete="current-password" required />
+                        <button type="button" class="btn secondary toggle" data-target="currentPassword">Show</button>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="label" for="newPassword">New password</label>
+                    <div class="row">
+                        <input type="password" id="newPassword" autocomplete="new-password" required minlength="8" />
+                        <button type="button" class="btn secondary toggle" data-target="newPassword">Show</button>
+                    </div>
+                    <div class="meter" aria-hidden="true"><div id="pwStrength"></div></div>
+                    <div id="pwHint" class="help small">Use 12+ chars with upper, lower, number, and symbol.</div>
+                </div>
+                <div class="field">
+                    <label class="label" for="confirmPassword">Confirm new password</label>
+                    <div class="row">
+                        <input type="password" id="confirmPassword" autocomplete="new-password" required />
+                        <button type="button" class="btn secondary toggle" data-target="confirmPassword">Show</button>
+                    </div>
+                </div>
+                <ul id="pwErrors" class="errlist" style="display:none;"></ul>
+                <div class="row" style="margin-top:12px;">
+                    <button class="btn" type="submit">Save password</button>
+                    <span id="pwStatus" class="status"></span>
+                </div>
+            </form>
+        </section>
+
+        <!-- Update QCall API Key -->
+        <section class="card half" id="apikey-card">
+            <h2>QCall API Key</h2>
+            <p class="desc">Store your QCall API key. It will be saved to the <em>users</em> table on submit.</p>
+            <form id="apiKeyForm" onsubmit="return false;" novalidate>
+                <div class="field">
+                    <label class="label" for="qcallApiKey">API key</label>
+                    <div class="row">
+                        <input type="text" id="qcallApiKey" autocomplete="off" placeholder="qc_live_..." />
+                        <button type="button" class="btn secondary right" id="maskKeyBtn">Mask</button>
+                    </div>
+                    <div class="help small">We’ll only show the last 4 characters after save.</div>
+                </div>
+                <div class="row" style="margin-top:12px;">
+                    <button class="btn" type="button" id="saveApiKeyBtn">Save API key</button>
+                    <span id="keyStatus" class="status"></span>
+                </div>
+            </form>
+        </section>
+
+        <section class="card" style="grid-column: span 12;">
+            <h2>Sessions</h2>
+            <p class="desc">If you changed your password, consider signing out other sessions.</p>
+            <button class="btn secondary" type="button" id="signOutOthersBtn">Sign out of all devices</button>
+            <span id="sessionsStatus" class="status"></span>
+        </section>
+    </div>
+</div>
+
+<script>
+    // ===== CONFIG =====
+    const ENDPOINTS = {
+        password: "/account/password",
+        apiKey: "/account/qcall-key",
+        signOutOthers: "/account/sessions/revoke"
+    };
+    const BASE =
+        document.querySelector('meta[name="api-base"]')?.content?.trim()
+        || (window.__API_BASE__ || "").toString().trim()
+        || "";
+    const sameOrigin = (() => { if(!BASE) return true; try { return new URL(BASE, location.href).origin === location.origin; } catch { return true; } })();
+
+    // ===== CSRF =====
+    function getCookie(n){ const m=document.cookie.match('(^|;)\\s*'+n+'\\s*=\\s*([^;]+)'); return m?decodeURIComponent(m.pop()):null; }
+    let REMOTE_CSRF=null;
+    async function ensureCsrf(){
+        if(sameOrigin) return;
+        const res=await fetch((BASE||"")+"/csrf-token",{credentials:"include"});
+        if(!res.ok) throw new Error("csrf fetch failed");
+        const d=await res.json(); REMOTE_CSRF={headerName:d.headerName||"X-XSRF-TOKEN",token:d.token};
+    }
+    function authHeaders(){
+        const h={"Content-Type":"application/json","Accept":"application/json","X-Requested-With":"XMLHttpRequest"};
+        if(sameOrigin){
+            const tok=getCookie("XSRF-TOKEN");
+            if(tok){ h["X-XSRF-TOKEN"]=tok; h["X-CSRF-TOKEN"]=tok; }
+        } else if(REMOTE_CSRF?.token){
+            const hdr=REMOTE_CSRF.headerName||"X-XSRF-TOKEN"; h[hdr]=REMOTE_CSRF.token; h["X-CSRF-TOKEN"]=REMOTE_CSRF.token;
+        }
+        return h;
+    }
+
+    // ===== Net helpers =====
+    async function fetchJSON(url, opts={}) {
+        const res = await fetch(url, { credentials:"include", ...opts });
+        const txt = await res.text();
+        let data; try { data = txt ? JSON.parse(txt) : {}; } catch { data = { raw: txt }; }
+        if (!res.ok) {
+            const err = new Error((data && (data.message || data.error)) || res.statusText); err.status=res.status; err.data=data; throw err;
+        }
+        return data;
+    }
+    async function postJSON(url, body) {
+        return fetchJSON(url, { method:"POST", headers:authHeaders(), body:JSON.stringify(body) });
+    }
+
+    // ===== UI helpers =====
+    function setStatus(el,msg,cls){ el.className="status "+(cls||""); el.textContent=msg; }
+    function maskValue(v){ return v.length<=4 ? "••••" : "••••••••••••••••"+v.slice(-4); }
+    document.querySelectorAll(".toggle").forEach(b=>b.addEventListener("click",()=>{const i=document.getElementById(b.dataset.target); if(!i)return; i.type=(i.type==="password")?"text":"password"; b.textContent=(i.type==="password")?"Show":"Hide";}));
+
+    // Password strength
+    const pw = document.getElementById("newPassword");
+    const meter = document.getElementById("pwStrength");
+    const pwHint = document.getElementById("pwHint");
+    function score(v){let s=0; if(v.length>=8)s++; if(v.length>=12)s++; if(/[A-Z]/.test(v))s++; if(/[a-z]/.test(v))s++; if(/[0-9]/.test(v))s++; if(/[^A-Za-z0-9]/.test(v))s++; return Math.min(s,5);}
+    pw.addEventListener("input",()=>{const s=score(pw.value); meter.style.width=Math.min(100,s*20)+"%"; meter.style.background=s>=4?"var(--ok)":s>=3?"var(--warn)":"var(--err)"; pwHint.textContent=s>=4?"Strong password 👍":"Use 12+ chars with upper, lower, number, and symbol.";});
+
+    // Password submit
+    const pwForm = document.getElementById("passwordForm");
+    const pwStatus = document.getElementById("pwStatus");
+    const pwErrors = document.getElementById("pwErrors");
+    pwForm.addEventListener("submit", async (e)=>{
+        e.preventDefault();
+        pwErrors.style.display="none"; pwErrors.innerHTML="";
+        const currentPassword = document.getElementById("currentPassword").value.trim();
+        const newPassword = document.getElementById("newPassword").value;
+        const confirmPassword = document.getElementById("confirmPassword").value;
+
+        if(!currentPassword||!newPassword||!confirmPassword) return setStatus(pwStatus,"Please fill all password fields.","warn");
+        if(newPassword!==confirmPassword) return setStatus(pwStatus,"New password and confirmation do not match.","err");
+
+        setStatus(pwStatus,"Saving...","");
+        try{
+            await ensureCsrf(); // refresh token if cross-origin
+            // DEBUG (if needed): console.log("POST", (BASE||"")+ENDPOINTS.password, {currentPassword,newPassword,confirmPassword});
+            await postJSON((BASE||"")+ENDPOINTS.password,{currentPassword,newPassword,confirmPassword});
+            setStatus(pwStatus,"Password updated successfully.","ok");
+            pwForm.reset(); meter.style.width="0%"; pwHint.textContent="Use 12+ chars with upper, lower, number, and symbol.";
+        }catch(err){
+            // Show validation errors if server returned them
+            const errs = err?.data?.errors || err?.data?.fieldErrors || [];
+            if (Array.isArray(errs) && errs.length){
+                pwErrors.style.display="block";
+                pwErrors.innerHTML = errs.map(e => `<li>${(e.field? e.field+": " : "")}${e.defaultMessage||e.message||"Invalid value"}</li>`).join("");
+            }
+            if(err.status===401) setStatus(pwStatus,"Unauthenticated. Please sign in.","err");
+            else if(err.status===403) setStatus(pwStatus,"Forbidden. CSRF token missing/invalid.","err");
+            else if(err.status===400) setStatus(pwStatus, err?.data?.message || "Bad request (check password length ≥ 8).", "err");
+            else setStatus(pwStatus,`Error: ${err.message||"Failed to update password"}`,"err");
+        }
+    });
+
+    // API key
+    const apiForm = document.getElementById("apiKeyForm");
+    const keyInput = document.getElementById("qcallApiKey");
+    const maskBtn = document.getElementById("maskKeyBtn");
+    const saveApiKeyBtn = document.getElementById("saveApiKeyBtn");
+    const keyStatus = document.getElementById("keyStatus");
+    let masked=false;
+    apiForm.addEventListener("submit",(e)=>e.preventDefault());
+    maskBtn.addEventListener("click",()=>{ if(!keyInput.value) return; if(!masked){ keyInput.dataset.raw=keyInput.value; keyInput.value=maskValue(keyInput.value); maskBtn.textContent="Unmask"; masked=true; } else { keyInput.value=keyInput.dataset.raw||""; keyInput.dataset.raw=""; maskBtn.textContent="Mask"; masked=false; }});
+    async function saveApiKey(){
+        const raw = keyInput.dataset.raw || keyInput.value;
+        if(!raw) return setStatus(keyStatus,"Please enter your API key.","warn");
+        setStatus(keyStatus,"Saving...","");
+        try{
+            await ensureCsrf();
+            await postJSON((BASE||"")+ENDPOINTS.apiKey,{qcallApiKey:raw});
+            setStatus(keyStatus,"API key saved.","ok");
+            keyInput.value=maskValue(raw); keyInput.dataset.raw=""; masked=true; maskBtn.textContent="Unmask";
+        }catch(err){
+            if(err.status===401) setStatus(keyStatus,"Unauthenticated. Please sign in.","err");
+            else if(err.status===403) setStatus(keyStatus,"Forbidden. CSRF token missing/invalid.","err");
+            else if(err.status===400) setStatus(keyStatus, err?.data?.message || "Bad request.", "err");
+            else setStatus(keyStatus,`Error: ${err.message||"Failed to save API key"}`,"err");
+        }
+    }
+    saveApiKeyBtn.addEventListener("click", saveApiKey);
+
+    // Init: CSRF + profile
+    (async ()=>{
+        try{ await ensureCsrf(); }catch(e){ console.warn("CSRF init failed", e); }
+        try{
+            const me = await fetchJSON((BASE||'')+"/account/me",{ headers: authHeaders() });
+            document.getElementById("userName").textContent = me.fullName || me.username || "User";
+            document.getElementById("userEmail").textContent = me.email || me.username || "";
+            if(me.maskedQcallKey && !keyInput.value){ keyInput.placeholder = me.maskedQcallKey; }
+        }catch(e){ console.warn("Failed to load profile", e); }
+    })();
+</script>
+</body>
+</html>

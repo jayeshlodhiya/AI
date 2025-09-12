@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.retailai.model.QCallPlaygroundRequest;
+import com.retailai.security.CurrentUser;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -19,20 +20,22 @@ public class QCallService {
 
     private final RestTemplate restTemplate;
     private final String baseUrl;
-    private final String apiKey;
+     String apiKey;
     private final ObjectMapper om = new ObjectMapper();
+    private final CurrentUser currentUser;
 
     public QCallService(RestTemplate restTemplate,
                         @Value("${qcall.base-url}") String baseUrl,
-                        @Value("${qcall.api-key}") String apiKey) {
+                         CurrentUser currentUser) {
         this.restTemplate = restTemplate;
         this.baseUrl = baseUrl;
-        this.apiKey = apiKey;
+        this.currentUser = currentUser;
+
     }
 
     public List<Map<String,Object>> listAssistants() {
         String url = baseUrl + "/user/listAssistant";
-
+        apiKey = currentUser.get().get().getQcallApiKey();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(apiKey);               // Try Bearer first
         headers.set("x-api-key", apiKey);            // Also send x-api-key (some APIs accept this)
@@ -52,7 +55,7 @@ public class QCallService {
 
     public Map<String,Object> createAssistant(Map<String,Object> payload) {
         String url = baseUrl + "/user/createAssistant";
-
+        apiKey = currentUser.get().get().getQcallApiKey();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(apiKey);
         headers.set("x-api-key", apiKey);
@@ -73,6 +76,7 @@ public class QCallService {
 
     public Map<String, Object> startPlaygroundCall(QCallPlaygroundRequest req) {
         String url = baseUrl + "/playground/call";
+        apiKey = currentUser.get().get().getQcallApiKey();
         if(req.getAssistantId()==null) {
             req.setAssistantId("a87368ed-7a86-463f-a0c4-b4ee85f18b1c");//("4b1b5677-10e3-4005-a502-386f31b579d4");
         }
@@ -146,7 +150,7 @@ public class QCallService {
 
     public List<Map<String, Object>> listPlayground() {
         String url = baseUrl + "/playground/list";
-
+        apiKey = currentUser.get().get().getQcallApiKey();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(apiKey);               // Try Bearer first
         headers.set("x-api-key", apiKey);            // Also send x-api-key (some APIs accept this)

@@ -138,11 +138,15 @@
       { id:'leads', title:'Leads', desc:'Open external page', icon:'🧲', gradient:'var(--g-leads)',
       url:'call-agents.html' },  // opens in iframe popup
     { id:'users', title:'Users', desc:'Activity & cohorts', icon:'👥', gradient:'var(--g-users)',
-      html:`<div style="padding:18px;color:#334">Users internal content placeholder</div>`},
+        url:'UserAccount.html'},
     { id:'crm',   title:'Chat',   desc:'Chat with AI assistant', icon:'📒', gradient:'var(--g-crm)',
       url:'TestChat.html'},
       { id:'pp',   title:'Product Promotion (Image)',   desc:'Promote your product', icon:'📒', gradient:'var(--g-crm)',
           url:'promotion-image.html'},
+      { id:'pv',   title:'Product Promotion (Video)',   desc:'Promote your product', icon:'📒', gradient:'var(--g-crm)',
+          url:'promotions.html'},
+      { id:'documentId',   title:'Documents',   desc:'Chat with your Documents', icon:'📒', gradient:'var(--g-crm)',
+          url:'document-upload.html'},
   ];
 
   const elCards = document.getElementById('cards');
@@ -195,5 +199,6 @@
     const id = location.hash.replace('#/',''); if(id) openModule(id);
   });
 </script>
+<script src="js/chat.js"></script>
 </body>
 </html>
