@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us</title>
+</head>
+<body>
+<div class="external-page-content">
+    <div class="page-header" style="margin-bottom: 2rem; text-align: center;">
+        <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Get In Touch</h1>
+        <p style="font-size: 1.125rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto;">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+    </div>
+
+    <div class="contact-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; max-width: 1000px; margin: 0 auto;">
+        <div class="contact-info">
+            <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Contact Information</h2>
+
+            <div class="contact-item" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                <div style="width: 50px; height: 50px; background: var(--primary-color); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fas fa-map-marker-alt"></i>
+                </div>
+                <div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Address</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">123 Business Street<br>Suite 100, City, State 12345</p>
+                </div>
+            </div>
+
+            <div class="contact-item" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                <div style="width: 50px; height: 50px; background: var(--success-color); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fas fa-phone"></i>
+                </div>
+                <div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Phone</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">+1 (555) 123-4567</p>
+                </div>
+            </div>
+
+            <div class="contact-item" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-secondary); border-radius: 0.75rem; border: 1px solid var(--border-color);">
+                <div style="width: 50px; height: 50px; background: var(--accent-color); border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; color: white;">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div>
+                    <h4 style="font-weight: 600; margin-bottom: 0.25rem;">Email</h4>
+                    <p style="color: var(--text-secondary); font-size: 0.875rem;">contact@company.com</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="contact-form">
+            <form style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 1rem; padding: 2rem;">
+                <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Send Message</h2>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Name</label>
+                    <input type="text" style="width: 100%; padding: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-family: inherit;">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Email</label>
+                    <input type="email" style="width: 100%; padding: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-family: inherit;">
+                </div>
+
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Subject</label>
+                    <input type="text" style="width: 100%; padding: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-family: inherit;">
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500; color: var(--text-primary);">Message</label>
+                    <textarea rows="5" style="width: 100%; padding: 0.75rem; background: var(--bg-tertiary); border: 1px solid var(--border-color); border-radius: 0.5rem; color: var(--text-primary); font-family: inherit; resize: vertical;"></textarea>
+                </div>
+
+                <button type="submit" style="width: 100%; background: linear-gradient(135deg, var(--primary-color), var(--primary-dark)); color: white; border: none; padding: 0.875rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: var(--transition);">
+                    Send Message
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    @media (max-width: 768px) {
+        .contact-container {
+            grid-template-columns: 1fr !important;
+            gap: 2rem !important;
+        }
+    }
+</style>
+</body>
+</html>

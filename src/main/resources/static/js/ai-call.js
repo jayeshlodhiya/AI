@@ -166,6 +166,7 @@ function renderAssistants(list) {
 
 // ===== API loaders =====
 async function loadAssistants() {
+    //alert("Test");
     statusText()?.replaceChildren(el("span",{class:"spinner"})," Loading assistants…");
     try {
         const url = `${API_BASE}/api/qcall/assistants`;

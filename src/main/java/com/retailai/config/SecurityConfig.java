@@ -69,9 +69,11 @@ public class SecurityConfig {
                                 "default-src 'self'; " +
                                         "base-uri 'self'; object-src 'none'; " +
                                         "script-src 'self' 'unsafe-inline'; " +
-                                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                                        "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
-                                        "font-src 'self' https://fonts.gstatic.com data:; " +
+                                        // allow CSS from Google Fonts and cdnjs
+                                        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " +
+                                        "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; " +
+                                        // allow font files from Google Fonts and cdnjs (FA webfonts)
+                                        "font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; " +
                                         "media-src 'self' data: blob: https://precallai.s3.ap-south-1.amazonaws.com https://*.s3.ap-south-1.amazonaws.com; " +
                                         "img-src 'self' data: https://placehold.co; " +
                                         "connect-src 'self' https://ai-production-40f7.up.railway.app https://localhost:8089; " +

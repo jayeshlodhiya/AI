@@ -380,7 +380,7 @@ function getCookie(name){
         return parts[0] === name ? decodeURIComponent(parts.slice(1).join('=')) : r;
     }, '');
 }
-window.__API_BASE__ = "https://ai-production-40f7.up.railway.app";
+
 /**
  * Calls Spring Security logout.
  * Requirements:
