@@ -43,6 +43,12 @@ app:
   seed:
     enabled: true
 
+  csp:
+    connect:
+      - https://ai-production-40f7.up.railway.app
+      - https://localhost:8089
+      - https://6f92eabe3d26.ngrok-free.app
+
   upload-dir: uploads
   llm:
     provider: ollama
