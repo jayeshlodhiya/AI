@@ -110,7 +110,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration c = new CorsConfiguration();
-        c.setAllowedOriginPatterns(List.of("http://localhost:*","http://ai-production-40f7.up.railway.app", "https://*"));
+        c.setAllowedOriginPatterns(List.of("http://localhost:*","https://ai-production-40f7.up.railway.app", "https://*"));
         c.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS","PATCH"));
         // Allow both common CSRF header names + auth
         c.setAllowedHeaders(List.of("Content-Type","X-XSRF-TOKEN","X-CSRF-TOKEN","Authorization"));

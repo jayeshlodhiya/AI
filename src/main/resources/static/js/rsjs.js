@@ -1207,3 +1207,4 @@
     window.location.assign(`${window.location.origin}/?logout`);
 }
 }
+    window.__API_BASE__ = "https://ai-production-40f7.up.railway.app";
