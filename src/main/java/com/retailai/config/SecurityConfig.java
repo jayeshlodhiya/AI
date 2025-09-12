@@ -96,10 +96,12 @@ public class SecurityConfig {
                                         "font-src 'self' https://fonts.gstatic.com data:; " +
                                         "media-src 'self' data: blob: https://precallai.s3.ap-south-1.amazonaws.com https://*.s3.ap-south-1.amazonaws.com; " +
                                         "img-src 'self' data: https://placehold.co; " +
-                                        "connect-src 'self'; " +
+                                        // 👇 allow your API(s) here (HTTPS strongly recommended)
+                                        "connect-src 'self' https://ai-production-40f7.up.railway.app https://localhost:8089 wss://ai-production-40f7.up.railway.app; " +
                                         "frame-ancestors 'self'"
                         ))
                 );
+
 
         return http.build();
     }
