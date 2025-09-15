@@ -2,9 +2,6 @@ class Dashboard {
     constructor() {
         this.sidebar = document.getElementById('sidebar');
         this.toggleBtn = document.getElementById('toggleSidebar');
-        this.mobileMenuBtn = document.getElementById('mobileMenuBtn');
-        this.mobileBottomNav = document.getElementById('mobileBottomNav');
-        this.mobileOverlay = document.getElementById('mobileOverlay');
         this.navMenu = document.getElementById('navMenu');
         this.contentContainer = document.getElementById('contentContainer');
         this.pageTitle = document.getElementById('pageTitle');
@@ -13,8 +10,6 @@ class Dashboard {
 
         this.currentPage = 'dashboard';
         this.isCollapsed = false;
-        this.isMobile = window.innerWidth <= 768;
-        this.mobileMenuOpen = false;
 
         this.init();
     }
@@ -29,23 +24,8 @@ class Dashboard {
         // Sidebar toggle
         this.toggleBtn.addEventListener('click', () => this.toggleSidebar());
 
-        // Mobile menu button
-        if (this.mobileMenuBtn) {
-            this.mobileMenuBtn.addEventListener('click', () => this.toggleMobileMenu());
-        }
-
-        // Mobile overlay
-        if (this.mobileOverlay) {
-            this.mobileOverlay.addEventListener('click', () => this.closeMobileMenu());
-        }
-
         // Navigation menu
         this.navMenu.addEventListener('click', (e) => this.handleNavigation(e));
-
-        // Mobile bottom navigation
-        if (this.mobileBottomNav) {
-            this.mobileBottomNav.addEventListener('click', (e) => this.handleMobileNavigation(e));
-        }
 
         // Theme toggle
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
@@ -55,44 +35,12 @@ class Dashboard {
     }
 
     toggleSidebar() {
-        if (this.isMobile) {
-            this.toggleMobileMenu();
-        } else {
-            this.isCollapsed = !this.isCollapsed;
-            this.sidebar.classList.toggle('collapsed', this.isCollapsed);
+        this.isCollapsed = !this.isCollapsed;
+        this.sidebar.classList.toggle('collapsed', this.isCollapsed);
 
-            // Update toggle icon for desktop
-            const icon = this.toggleBtn.querySelector('i');
-            icon.className = this.isCollapsed ? 'fas fa-bars' : 'fas fa-times';
-        }
-    }
-
-    toggleMobileMenu() {
-        this.mobileMenuOpen = !this.mobileMenuOpen;
-        this.sidebar.classList.toggle('mobile-open', this.mobileMenuOpen);
-        this.mobileOverlay.classList.toggle('active', this.mobileMenuOpen);
-        this.mobileMenuBtn.classList.toggle('active', this.mobileMenuOpen);
-
-        // Update mobile menu button icon
-        const icon = this.mobileMenuBtn.querySelector('i');
-        icon.className = this.mobileMenuOpen ? 'fas fa-times' : 'fas fa-bars';
-
-        // Prevent body scroll when menu is open
-        document.body.style.overflow = this.mobileMenuOpen ? 'hidden' : '';
-    }
-
-    closeMobileMenu() {
-        if (this.mobileMenuOpen) {
-            this.mobileMenuOpen = false;
-            this.sidebar.classList.remove('mobile-open');
-            this.mobileOverlay.classList.remove('active');
-            this.mobileMenuBtn.classList.remove('active');
-
-            const icon = this.mobileMenuBtn.querySelector('i');
-            icon.className = 'fas fa-bars';
-
-            document.body.style.overflow = '';
-        }
+        // Update toggle icon
+        const icon = this.toggleBtn.querySelector('i');
+        icon.className = this.isCollapsed ? 'fas fa-bars' : 'fas fa-times';
     }
 
     handleNavigation(e) {
@@ -105,41 +53,10 @@ class Dashboard {
         if (page && page !== this.currentPage) {
             this.loadPage(page);
             this.setActiveNavItem(navItem);
-
-            // Close mobile menu after navigation
-            if (this.isMobile && this.mobileMenuOpen) {
-                this.closeMobileMenu();
-            }
         }
-    }
-
-    handleMobileNavigation(e) {
-        e.preventDefault();
-
-        const navItem = e.target.closest('.mobile-nav-item');
-        if (!navItem) return;
-
-        const page = navItem.dataset.page;
-        if (page && page !== this.currentPage) {
-            this.loadPage(page);
-            this.setActiveMobileNavItem(navItem);
-            this.setActiveNavItem(document.querySelector(`[data-page="${page}"]`));
-        }
-    }
-
-    setActiveMobileNavItem(activeItem) {
-        // Remove active class from all mobile nav items
-        this.mobileBottomNav.querySelectorAll('.mobile-nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // Add active class to clicked item
-        activeItem.classList.add('active');
     }
 
     setActiveNavItem(activeItem) {
-        if (!activeItem) return;
-
         // Remove active class from all items
         this.navMenu.querySelectorAll('.nav-item').forEach(item => {
             item.classList.remove('active');
@@ -248,10 +165,10 @@ class Dashboard {
                 title: 'Analytics',
                 subtitle: 'Detailed insights and performance metrics.'
             },
-             aicalls: {
-                 title: 'AI Calls',
-                 subtitle: 'AI agent conversation and settings'
-                 },
+            aicalls: {
+                title: 'AI Calls',
+                subtitle: 'AI agent conversation and settings'
+            },
             projects: {
                 title: 'Projects',
                 subtitle: 'Manage your projects and track progress.'
@@ -624,33 +541,9 @@ class Dashboard {
     }
 
     handleResize() {
-        const wasMobile = this.isMobile;
-        this.isMobile = window.innerWidth <= 768;
-
-        if (this.isMobile && !wasMobile) {
-            // Switched to mobile
+        if (window.innerWidth <= 768) {
             this.sidebar.classList.remove('collapsed');
             this.isCollapsed = false;
-            if (this.mobileMenuOpen) {
-                this.closeMobileMenu();
-            }
-        } else if (!this.isMobile && wasMobile) {
-            // Switched to desktop
-            this.closeMobileMenu();
-            if (this.toggleBtn) {
-                const icon = this.toggleBtn.querySelector('i');
-                icon.className = this.isCollapsed ? 'fas fa-bars' : 'fas fa-times';
-            }
-        }
-
-        // Show/hide mobile bottom nav
-        if (this.mobileBottomNav) {
-            this.mobileBottomNav.style.display = this.isMobile ? 'flex' : 'none';
-        }
-
-        // Show/hide mobile menu button
-        if (this.mobileMenuBtn) {
-            this.mobileMenuBtn.style.display = this.isMobile ? 'flex' : 'none';
         }
     }
 }
@@ -722,3 +615,6 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+this.mobileMenuBtn = document.getElementById('mobileMenuBtn');
+this.sidebarBackdrop = document.getElementById('sidebarBackdrop');

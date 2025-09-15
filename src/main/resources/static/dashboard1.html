@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style1.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -15,7 +15,7 @@
         <div class="sidebar-header">
             <div class="logo">
                 <i class="fas fa-cube"></i>
-                <span>DashPro</span>
+                <span>Vistaar AI</span>
             </div>
             <button class="toggle-btn" id="toggleSidebar">
                 <i class="fas fa-bars"></i>
@@ -59,13 +59,13 @@
                     <span>Settings</span>
                 </a>
             </li>
-            <li class="nav-item" data-page="about" data-external="pages/about.html">
+            <li class="nav-item" data-page="about" data-external="about.html">
                 <a href="#" class="nav-link">
                     <i class="fas fa-info-circle"></i>
                     <span>About</span>
                 </a>
             </li>
-            <li class="nav-item" data-page="contact" data-external="pages/contact.html">
+            <li class="nav-item" data-page="contact" data-external="contact.html">
                 <a href="#" class="nav-link">
                     <i class="fas fa-envelope"></i>
                     <span>Contact</span>
@@ -89,9 +89,6 @@
     <!-- Main Content Area -->
     <main class="main-content">
         <header class="top-header">
-            <button class="mobile-menu-btn" id="mobileMenuBtn">
-                <i class="fas fa-bars"></i>
-            </button>
             <div class="header-left">
                 <h1 class="page-title" id="pageTitle">Dashboard</h1>
                 <p class="page-subtitle" id="pageSubtitle">Welcome back! Here's what's happening.</p>
@@ -102,7 +99,7 @@
                     <span class="notification-badge">3</span>
                 </button>
                 <button class="theme-toggle" id="themeToggle">
-                    <i class="fas fa-moon"></i>
+                    <i class="fas fa-sun"></i>
                 </button>
             </div>
         </header>
@@ -112,36 +109,9 @@
             <!-- Dashboard content will be loaded here -->
         </div>
     </main>
-
-    <!-- Mobile Bottom Navigation -->
-    <nav class="mobile-bottom-nav" id="mobileBottomNav">
-        <a href="#" class="mobile-nav-item active" data-page="dashboard">
-            <i class="fas fa-chart-line"></i>
-            <span>Dashboard</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-page="analytics">
-            <i class="fas fa-chart-bar"></i>
-            <span>Analytics</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-page="projects">
-            <i class="fas fa-folder-open"></i>
-            <span>Projects</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-page="team">
-            <i class="fas fa-users"></i>
-            <span>Team</span>
-        </a>
-        <a href="#" class="mobile-nav-item" data-page="settings">
-            <i class="fas fa-cog"></i>
-            <span>Settings</span>
-        </a>
-    </nav>
-
-    <!-- Mobile Overlay -->
-    <div class="mobile-overlay" id="mobileOverlay"></div>
 </div>
 
-<script src="js/main.js"></script>
+<script src="js/main1.js"></script>
 <script src="js/ai-call.js"></script>
 </body>
 </html>
