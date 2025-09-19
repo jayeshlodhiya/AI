@@ -11,6 +11,6 @@ public class DashboardController {
     @GetMapping("/dashboard")
     public String dashboard(Model model) {
         model.addAttribute("title", "VISTAAR Dashboard");
-        return "dashboard"; // src/main/resources/templates/dashboard.html
+        return "dashboard"; // src/main/resources/templates/dashboard1.html
     }
 }
