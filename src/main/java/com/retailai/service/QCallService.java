@@ -17,7 +17,7 @@ import java.util.Optional;
 
 @Service
 public class QCallService {
-
+    private final String DEFAULT_API_KEY = "551b5903-22cd-4038-ae50-2648c7c0e8f1";//need to change
     private final RestTemplate restTemplate;
     private final String baseUrl;
      String apiKey;
@@ -76,7 +76,12 @@ public class QCallService {
 
     public Map<String, Object> startPlaygroundCall(QCallPlaygroundRequest req) {
         String url = baseUrl + "/playground/call";
-        apiKey = currentUser.get().get().getQcallApiKey();
+        if(currentUser.get().isPresent()){
+            apiKey = currentUser.get().get().getQcallApiKey();
+        }else{
+            apiKey = DEFAULT_API_KEY;
+        }
+
         if(req.getAssistantId()==null) {
             req.setAssistantId("a87368ed-7a86-463f-a0c4-b4ee85f18b1c");//("4b1b5677-10e3-4005-a502-386f31b579d4");
         }
